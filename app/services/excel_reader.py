@@ -1,0 +1,104 @@
+import os
+from openpyxl import load_workbook
+from app import db
+from app.models import GlossaryCache
+
+def load_glossary(file_path, glossary_type):
+    """
+    Read a glossary Excel file and return data as list of dicts
+
+    Args:
+        file_path: Path to Excel file
+        glossary_type: Type of glossary (academicsession, programme, etc.)
+
+    Returns:
+        List of dicts with 'code' and 'description' keys
+    """
+    try:
+        wb = load_workbook(file_path, read_only=True)
+        ws = wb.active
+        data = []
+
+        for row in ws.iter_rows(min_row=2, values_only=True):
+            if not row or not row[0]:
+                continue
+
+            code = str(row[0]).strip() if row[0] else ''
+            description = str(row[1]).strip() if len(row) > 1 and row[1] else ''
+
+            if code:
+                data.append({'code': code, 'description': description})
+
+        wb.close()
+        return data
+    except Exception as e:
+        print(f"Error loading glossary {file_path}: {e}")
+        return []
+
+def load_all_glossaries(app):
+    """
+    Load all glossary files into database cache
+
+    Args:
+        app: Flask application instance
+    """
+    glossary_dir = app.config['GLOSSARY_DIR']
+    glossary_files = app.config['GLOSSARY_FILES']
+
+    # Check if cache is already populated
+    existing_count = GlossaryCache.query.count()
+    if existing_count > 0:
+        print(f"Glossary cache already populated with {existing_count} entries")
+        return
+
+    print("Loading glossary files into database cache...")
+
+    for glossary_type, filename in glossary_files.items():
+        file_path = os.path.join(glossary_dir, filename)
+
+        if not os.path.exists(file_path):
+            print(f"Warning: Glossary file not found: {file_path}")
+            continue
+
+        data = load_glossary(file_path, glossary_type)
+
+        # Insert into database (skip duplicates)
+        inserted_count = 0
+        for item in data:
+            # Check if entry already exists
+            existing = GlossaryCache.query.filter_by(
+                glossary_type=glossary_type,
+                code=item['code']
+            ).first()
+
+            if not existing:
+                entry = GlossaryCache(
+                    glossary_type=glossary_type,
+                    code=item['code'],
+                    description=item['description']
+                )
+                db.session.add(entry)
+                inserted_count += 1
+
+        print(f"Loaded {inserted_count} entries for {glossary_type} ({len(data)} total in file)")
+
+    try:
+        db.session.commit()
+        total_count = GlossaryCache.query.count()
+        print(f"Glossary cache populated successfully with {total_count} total entries")
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error populating glossary cache: {e}")
+
+def get_glossary_data(glossary_type):
+    """
+    Get glossary data from database cache
+
+    Args:
+        glossary_type: Type of glossary to retrieve
+
+    Returns:
+        List of dicts with 'code' and 'description' keys
+    """
+    entries = GlossaryCache.query.filter_by(glossary_type=glossary_type).all()
+    return [entry.to_dict() for entry in entries]

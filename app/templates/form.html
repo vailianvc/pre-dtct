@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="form-container">
+    <h2 class="form-title">Timetable Information Form</h2>
+
+    <form id="dtctForm">
+        <div class="row">
+            <!-- Academic Session Code -->
+            <div class="col-md-6 mb-3">
+                <label for="academic_session_code" class="form-label">Academic Session Code <span class="text-danger">*</span></label>
+                <select class="form-select select2-single" id="academic_session_code" name="academic_session_code" required>
+                    <option value="">Select Academic Session</option>
+                </select>
+            </div>
+
+            <!-- Programme Code -->
+            <div class="col-md-6 mb-3">
+                <label for="programme_code" class="form-label">Programme Code <span class="text-danger">*</span></label>
+                <select class="form-select select2-single" id="programme_code" name="programme_code" required>
+                    <option value="">Select Programme</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Class Commencement -->
+            <div class="col-md-6 mb-3">
+                <label for="class_commencement" class="form-label">Class Commencement <span class="text-danger">*</span></label>
+                <select class="form-select" id="class_commencement" name="class_commencement" required>
+                    <option value="">Select Date</option>
+                </select>
+            </div>
+
+            <!-- Duration -->
+            <div class="col-md-6 mb-3">
+                <label for="duration" class="form-label">Duration (hours) <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" id="duration" name="duration" value="0" min="0" required>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Activity Code -->
+            <div class="col-md-6 mb-3">
+                <label for="activity_code" class="form-label">Activity Code <span class="text-danger">*</span></label>
+                <select class="form-select select2-single" id="activity_code" name="activity_code" required>
+                    <option value="">Select Activity</option>
+                </select>
+            </div>
+
+            <!-- Capacity -->
+            <div class="col-md-6 mb-3">
+                <label for="capacity" class="form-label">Capacity <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" id="capacity" name="capacity" value="0" min="0" required>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Course Code (Multi-select) -->
+            <div class="col-md-12 mb-3">
+                <label for="course_codes" class="form-label">Course Code(s) <span class="text-danger">*</span></label>
+                <select class="form-select select2-multiple" id="course_codes" name="course_codes" multiple required>
+                </select>
+                <div class="form-text">You can select multiple courses in one class session</div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Group Code (Multi-select) -->
+            <div class="col-md-12 mb-3">
+                <label for="group_codes" class="form-label">Group Code(s) <span class="text-danger">*</span></label>
+                <select class="form-select select2-multiple" id="group_codes" name="group_codes" multiple required>
+                </select>
+                <div class="form-text">You can select multiple groups in one class session</div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Faculty Code (Multi-select) -->
+            <div class="col-md-12 mb-3">
+                <label for="faculty_codes" class="form-label">Faculty Code(s) <span class="text-danger">*</span></label>
+                <select class="form-select select2-multiple" id="faculty_codes" name="faculty_codes" multiple required>
+                </select>
+                <div class="form-text">You can select multiple faculty members in one class session</div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Special Room Code (Optional) -->
+            <div class="col-md-6 mb-3">
+                <label for="request_special_room_code" class="form-label">Request Special Room Code</label>
+                <select class="form-select select2-single" id="request_special_room_code" name="request_special_room_code">
+                    <option value="">None (Optional)</option>
+                </select>
+            </div>
+
+            <!-- Recurring Until Week -->
+            <div class="col-md-6 mb-3">
+                <label for="recurring_until_week" class="form-label">Recurring Until Week <span class="text-danger">*</span></label>
+                <input type="number" class="form-control" id="recurring_until_week" name="recurring_until_week" value="14" min="1" required>
+            </div>
+        </div>
+
+        <!-- Form Action Buttons -->
+        <div class="text-center mt-4">
+            <button type="submit" class="btn btn-primary btn-lg" id="addEntryBtn">
+                <i class="bi bi-plus-circle"></i>
+                <span id="addBtnText">Add Entry</span>
+            </button>
+            <button type="button" class="btn btn-secondary btn-lg ms-2" id="clearFormBtn">
+                Clear Form
+            </button>
+        </div>
+    </form>
+
+    <!-- Entries List -->
+    <div id="entriesSection" class="mt-5 d-none">
+        <div class="entries-header">
+            <h3>Added Entries (<span id="entryCount">0</span>)</h3>
+            <button type="button" class="btn btn-success btn-lg" id="generateAllBtn">
+                <span id="genBtnText">Generate Excel File</span>
+                <span id="genBtnSpinner" class="spinner-border spinner-border-sm ms-2 d-none" role="status"></span>
+            </button>
+        </div>
+
+        <div class="table-responsive mt-3">
+            <table class="table table-hover" id="entriesTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Academic Session</th>
+                        <th>Programme</th>
+                        <th>Date</th>
+                        <th>Duration</th>
+                        <th>Activity</th>
+                        <th>Capacity</th>
+                        <th>Courses</th>
+                        <th>Groups</th>
+                        <th>Faculty</th>
+                        <th>Special Room</th>
+                        <th>Weeks</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="entriesTableBody">
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Result Message -->
+    <div id="resultMessage" class="mt-4 d-none">
+        <div class="alert alert-success">
+            <h5>Success!</h5>
+            <p id="resultText"></p>
+            <a href="#" id="downloadLink" class="btn btn-success btn-sm">Download Excel File</a>
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    <div id="errorMessage" class="mt-4 d-none">
+        <div class="alert alert-danger">
+            <h5>Error</h5>
+            <p id="errorText"></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

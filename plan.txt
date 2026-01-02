@@ -1,0 +1,44 @@
+Create a form where lecturer will fill in the details below.
+to fill:
+AcademicSessionCode = {academicsessioncode}. dropdown from glossary_sgcm_academicsessioncode.xlsx
+ProgrammeCode = {programmecode}. dropdown from glossary_sgcm_programmecode.xlsx
+ClassCommencement = {classcommencement}. dropdown show by day and date (e.g. Monday, 9 Feb 2026). date range from 9 Feb 2026 until 13 Feb 2026 [hardcoded for now]
+Duration = {duration}. integer. by default 0.
+ActivityCode = {activitycode}. dropdown from glossary_dtct_activitycode.xlsx.
+Capacity = {capacity}. integer. by default 0.
+CourseCode = {coursecode} <- can have multiple courses. dropdown from glossary_sgcm_coursecode.xlsx.
+GroupCode = {groupcode} <- can have multiple groups. dropdown from glossary_sgcm_groupcode.xlsx.
+FacultyCode = {facultycode} <- can have multiple faculty staff. dropdown from glossary_sgcm_facultycode.xlsx.
+RequestSpecialRoomCode = {requestspecialroomcode}. dropdown special labs. dropdown from glossary_dtct_specialroomcode.xlsx. optional
+RecurringUntilWeek = {RecurringUntilWeek}. integer. by default 14.
+
+must have validation especially the integer fields. except RequestSpecialRoomCode where it is optional to fill.
+For each dropdown, there is a search text.
+Once filled, lecturer will click button 'Generate' to generate file named Pre-DTCT_{programmecode}_{timestamp}.xlsx
+
+Example1:
+ID	|	FormID	|	AcademicSessionCode	|	ProgrammeCode	| ClassCommencement	|	Duration	|	ActivityCode	|	Capacity	|	CourseCode	|	GroupCode	|	FacultyCode	|	RequestSpecialRoomCode	|	RecurringUntilWeek
+20251226-1517-100001	|	900001	|	EXMS-2026-267	|	DOSH	|	2026-02-09	|	2	|	ACTMTR0011	|	50	|	DIT1314	|	UOC00001	|	UATL3	|		|	14,
+20251226-1517-100002	|	900002	|	EXMS-2026-267	|	DIA	|	2026-02-09	|	2	|	ACTMTR0012	|	10	|	MCP5043	|	BBET00022	|	UOC256	|		|	14
+
+ID = running ID consist of today date and time the file generated. 
+i.e. 20251226-1517-100001
+20251226 = date
+1517 = time
+10001 = running number
+
+FormID = running ID of the same row of the input. affected on 
+
+Example2:
+ID	|	FormID	|	AcademicSessionCode	|	ProgrammeCode	| ClassCommencement	|	Duration	|	ActivityCode	|	Capacity	|	CourseCode	|	GroupCode	|	FacultyCode	|	RequestSpecialRoomCode	|	RecurringUntilWeek
+20251226-1517-100089	|	900001	|	EXMS-2026-267	|	DOSH	|	2026-02-09	|	2	|	ACTMTR0011	|	50	|	DIT1314	|	UOC00001	|	UATL3	|		|	14
+20251226-1517-100090	|	900001	|	EXMS-2026-267	|	DOSH	|	2026-02-09	|	2	|	ACTMTR0011	|	50	|	DIT1314	|	UOC00002	|	UATL3	|		|	14,
+20251226-1517-100090	|	900001	|	EXMS-2026-267	|	DOSH	|	2026-02-09	|	2	|	ACTMTR0011	|	50	|	DIT1314	|	UOC00003	|	UATL3	|		|	14,
+20251226-1517-100091	|	900002	|	EXMS-2026-267	|	DIA	|	2026-02-09	|	2	|	ACTMTR0012	|	10	|	MCP5043	|	BBET00022	|	UOC256	|		|	14
+
+Example3:
+ID	|	FormID	|	AcademicSessionCode	|	ProgrammeCode	| ClassCommencement	|	Duration	|	ActivityCode	|	Capacity	|	CourseCode	|	GroupCode	|	FacultyCode	|	RequestSpecialRoomCode	|	RecurringUntilWeek
+20251226-1517-100089	|	900001	|	EXMS-2026-267	|	DOSH	|	2026-02-09	|	2	|	ACTMTR0011	|	50	|	DIT1314	|	UOC00001	|	UATL3	|		|	14
+20251226-1517-100090	|	900001	|	EXMS-2026-267	|	DOSH	|	2026-02-09	|	2	|	ACTMTR0011	|	50	|	DIT1314	|	UOC00001	|	UOC188	|		|	14,
+20251226-1517-100090	|	900001	|	EXMS-2026-267	|	DOSH	|	2026-02-09	|	2	|	ACTMTR0011	|	50	|	DIT1314	|	UOC00003	|	UOC241	|		|	14,
+20251226-1517-100091	|	900002	|	EXMS-2026-267	|	DIA	|	2026-02-09	|	2	|	ACTMTR0012	|	10	|	MCP5043	|	BBET00022	|	UOC256	|		|	14
