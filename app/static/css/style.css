@@ -388,3 +388,140 @@ body {
     pointer-events: none;
     opacity: 0.7;
 }
+
+/* ===== Group Capacity Modal Styling ===== */
+
+/* Capacity Status Wrapper */
+.capacity-status-wrapper {
+    position: relative;
+}
+
+#setCapacityBtn {
+    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+    font-weight: 500;
+}
+
+#setCapacityBtn i {
+    font-size: 1.1rem;
+}
+
+#setCapacityBtn.btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000;
+}
+
+#setCapacityBtn.btn-warning:hover {
+    background-color: #ffb300;
+    border-color: #ffb300;
+}
+
+#capacityStatusDisplay .alert {
+    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+}
+
+/* Capacity Modal Styling */
+#capacityModal .modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+#capacityModal .modal-header {
+    background: var(--primary-color);
+    color: white;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    padding: 1.25rem 1.5rem;
+}
+
+#capacityModal .modal-title {
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+#capacityModal .modal-body {
+    padding: 1.5rem;
+    color: #333;
+}
+
+#capacityModal .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+#capacityTable {
+    margin-bottom: 0;
+}
+
+#capacityTable thead th {
+    background-color: #f8f9fa;
+    color: var(--primary-color);
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+#capacityTable tbody td {
+    vertical-align: middle;
+}
+
+#capacityTable tfoot td {
+    font-size: 1.1rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+    border-top: 2px solid var(--primary-color);
+}
+
+.capacity-input {
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    padding: 0.5rem 0.75rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.capacity-input:focus {
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 0.2rem rgba(6, 147, 227, 0.25);
+    outline: none;
+}
+
+.capacity-input.is-invalid {
+    border-color: #dc3545;
+}
+
+.capacity-input.is-invalid:focus {
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* Capacity Summary Tooltip */
+.capacity-summary {
+    cursor: help;
+    border-bottom: 1px dotted #6c757d;
+}
+
+/* Modal Scrollable Content */
+.modal-dialog-scrollable .modal-body {
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    #capacityModal .modal-dialog {
+        margin: 0.5rem;
+    }
+
+    #capacityTable {
+        font-size: 0.875rem;
+    }
+
+    .capacity-input {
+        font-size: 0.875rem;
+        padding: 0.4rem 0.6rem;
+    }
+}

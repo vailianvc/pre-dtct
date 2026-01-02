@@ -2,6 +2,10 @@
 let entries = [];
 let entryCounter = 1;
 
+// Global state for group capacities
+let groupCapacities = {}; // { "GROUP001": 30, "GROUP002": 45, ... }
+let capacitiesConfigured = false; // Tracks whether capacities have been set
+
 $(document).ready(function() {
     // Initialize Select2 for all dropdowns
     initializeSelect2();
@@ -20,6 +24,18 @@ $(document).ready(function() {
 
     // Handle Generate All button
     $('#generateAllBtn').on('click', handleGenerateAll);
+
+    // Handle group selection changes
+    $('#group_codes').on('change', handleGroupSelectionChange);
+
+    // Handle capacity button click
+    $('#setCapacityBtn').on('click', openCapacityModal);
+
+    // Handle save capacities
+    $('#saveCapacitiesBtn').on('click', saveGroupCapacities);
+
+    // Real-time total calculation in modal
+    $(document).on('input', '.capacity-input', updateModalTotal);
 });
 
 function initializeSelect2() {
@@ -174,7 +190,7 @@ function collectFormData() {
         duration: parseInt($('#duration').val()),
         activity_code: $('#activity_code').val(),
         activity_text: $('#activity_code option:selected').text(),
-        capacity: parseInt($('#capacity').val()),
+        group_capacities: { ...groupCapacities }, // Clone the object
         course_codes: $('#course_codes').val(),
         course_texts: $('#course_codes option:selected').map((i, el) => $(el).text()).get(),
         group_codes: $('#group_codes').val(),
@@ -202,7 +218,7 @@ function updateEntriesTable() {
                 <td><small>${entry.class_commencement}</small></td>
                 <td>${entry.duration}h</td>
                 <td><small>${entry.activity_code}</small></td>
-                <td>${entry.capacity}</td>
+                <td>${calculateTotalCapacity(entry.group_capacities)}</td>
                 <td>${formatArrayBadges(entry.course_codes)}</td>
                 <td>${formatArrayBadges(entry.group_codes)}</td>
                 <td>${formatArrayBadges(entry.faculty_codes)}</td>
@@ -235,12 +251,20 @@ function editEntry(index) {
     $('#class_commencement').val(entry.class_commencement).trigger('change');
     $('#duration').val(entry.duration);
     $('#activity_code').val(entry.activity_code).trigger('change');
-    $('#capacity').val(entry.capacity);
     $('#course_codes').val(entry.course_codes).trigger('change');
     $('#group_codes').val(entry.group_codes).trigger('change');
     $('#faculty_codes').val(entry.faculty_codes).trigger('change');
     $('#request_special_room_code').val(entry.request_special_room_code).trigger('change');
     $('#recurring_until_week').val(entry.recurring_until_week);
+
+    // Restore group capacities
+    groupCapacities = { ...entry.group_capacities };
+    capacitiesConfigured = true;
+
+    // Trigger group change to update UI (after groups are set)
+    setTimeout(() => {
+        handleGroupSelectionChange();
+    }, 100);
 
     // Remove the entry from list
     entries.splice(index, 1);
@@ -274,8 +298,13 @@ function clearForm() {
     $('.select2-single').val(null).trigger('change');
     $('.select2-multiple').val(null).trigger('change');
     $('#duration').val(0);
-    $('#capacity').val(0);
     $('#recurring_until_week').val(14);
+
+    // Clear capacity data
+    groupCapacities = {};
+    capacitiesConfigured = false;
+    $('#setCapacityBtn').prop('disabled', true).html('<i class="bi bi-pencil-square"></i> Select groups first');
+    $('#capacityStatusDisplay').addClass('d-none');
 }
 
 function handleGenerateAll() {
@@ -320,7 +349,182 @@ function handleGenerateAll() {
     });
 }
 
+// ===== Group Capacity Handler Functions =====
+
+function handleGroupSelectionChange() {
+    const selectedGroups = $('#group_codes').val() || [];
+    const setCapacityBtn = $('#setCapacityBtn');
+
+    if (selectedGroups.length === 0) {
+        // No groups selected
+        setCapacityBtn.prop('disabled', true);
+        setCapacityBtn.html('<i class="bi bi-pencil-square"></i> Select groups first');
+        setCapacityBtn.removeClass('btn-warning').addClass('btn-outline-primary');
+        $('#capacityStatusDisplay').addClass('d-none');
+        capacitiesConfigured = false;
+        groupCapacities = {};
+    } else {
+        // Groups selected
+        setCapacityBtn.prop('disabled', false);
+
+        // Check if selection changed after capacities were set
+        const currentGroupSet = new Set(selectedGroups);
+        const configuredGroupSet = new Set(Object.keys(groupCapacities));
+
+        const groupsMatch = currentGroupSet.size === configuredGroupSet.size &&
+                           [...currentGroupSet].every(g => configuredGroupSet.has(g));
+
+        if (!capacitiesConfigured || !groupsMatch) {
+            // Groups changed or not yet configured
+            setCapacityBtn.html('<i class="bi bi-exclamation-triangle"></i> Set Group Capacities');
+            setCapacityBtn.removeClass('btn-outline-primary').addClass('btn-warning');
+            capacitiesConfigured = false;
+
+            // Preserve existing capacity values for groups still selected
+            const newCapacities = {};
+            selectedGroups.forEach(group => {
+                newCapacities[group] = groupCapacities[group] || 0;
+            });
+            groupCapacities = newCapacities;
+
+            $('#capacityStatusDisplay').addClass('d-none');
+        } else {
+            // Capacities already configured for current selection
+            setCapacityBtn.html('<i class="bi bi-check-circle"></i> Edit Group Capacities');
+            setCapacityBtn.removeClass('btn-warning').addClass('btn-outline-primary');
+            updateCapacityStatusDisplay();
+        }
+    }
+}
+
+function openCapacityModal() {
+    const selectedGroups = $('#group_codes').val() || [];
+    const tableBody = $('#capacityTableBody');
+    tableBody.empty();
+
+    // Get display text for each group
+    const groupTexts = {};
+    $('#group_codes option:selected').each(function() {
+        const code = $(this).val();
+        groupTexts[code] = $(this).text();
+    });
+
+    // Populate table rows
+    selectedGroups.forEach((groupCode, index) => {
+        const capacity = groupCapacities[groupCode] || 0;
+        const row = `
+            <tr>
+                <td>
+                    <strong>${groupCode}</strong>
+                    <br>
+                    <small class="text-muted">${groupTexts[groupCode]}</small>
+                </td>
+                <td>
+                    <input type="number"
+                           class="form-control capacity-input"
+                           data-group-code="${groupCode}"
+                           value="${capacity}"
+                           min="0"
+                           required
+                           placeholder="Enter capacity">
+                </td>
+            </tr>
+        `;
+        tableBody.append(row);
+    });
+
+    updateModalTotal();
+
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('capacityModal'));
+    modal.show();
+}
+
+function updateModalTotal() {
+    let total = 0;
+    $('.capacity-input').each(function() {
+        const value = parseInt($(this).val()) || 0;
+        total += value;
+    });
+    $('#modalTotalCapacity').text(total);
+}
+
+function saveGroupCapacities() {
+    // Validate all fields are filled with valid numbers
+    let isValid = true;
+    const newCapacities = {};
+
+    $('.capacity-input').each(function() {
+        const input = $(this);
+        const groupCode = input.data('group-code');
+        const value = parseInt(input.val());
+
+        if (isNaN(value) || value < 0) {
+            isValid = false;
+            input.addClass('is-invalid');
+        } else {
+            input.removeClass('is-invalid');
+            newCapacities[groupCode] = value;
+        }
+    });
+
+    if (!isValid) {
+        showError('Please enter valid capacity values (0 or greater) for all groups.');
+        return;
+    }
+
+    // Save to global state
+    groupCapacities = newCapacities;
+    capacitiesConfigured = true;
+
+    // Update button and display
+    $('#setCapacityBtn').html('<i class="bi bi-check-circle"></i> Edit Group Capacities');
+    $('#setCapacityBtn').removeClass('btn-warning').addClass('btn-outline-primary');
+    updateCapacityStatusDisplay();
+
+    // Close modal
+    bootstrap.Modal.getInstance(document.getElementById('capacityModal')).hide();
+
+    // Show brief success message
+    showSuccess('Group capacities saved successfully!');
+    setTimeout(() => {
+        $('#resultMessage').addClass('d-none');
+    }, 2000);
+}
+
+function updateCapacityStatusDisplay() {
+    const total = Object.values(groupCapacities).reduce((sum, cap) => sum + cap, 0);
+    const groupCount = Object.keys(groupCapacities).length;
+
+    $('#totalCapacityDisplay').text(total);
+    $('#groupCountDisplay').text(groupCount);
+    $('#capacityStatusDisplay').removeClass('d-none');
+}
+
+function calculateTotalCapacity(groupCapacities) {
+    if (!groupCapacities) return 0;
+    return Object.values(groupCapacities).reduce((sum, cap) => sum + cap, 0);
+}
+
 function validateForm() {
+    // Check if group capacities are configured
+    if (!capacitiesConfigured || Object.keys(groupCapacities).length === 0) {
+        showError('Please set capacities for all selected groups.');
+        $('#setCapacityBtn').focus();
+        return false;
+    }
+
+    // Verify capacities match current group selection
+    const selectedGroups = $('#group_codes').val() || [];
+    const groupsMatch = selectedGroups.length === Object.keys(groupCapacities).length &&
+                       selectedGroups.every(g => groupCapacities.hasOwnProperty(g));
+
+    if (!groupsMatch) {
+        showError('Group selection has changed. Please update group capacities.');
+        $('#setCapacityBtn').focus();
+        return false;
+    }
+
     // Check required fields
     const requiredFields = [
         { id: 'academic_session_code', name: 'Academic Session Code' },
@@ -328,7 +532,6 @@ function validateForm() {
         { id: 'class_commencement', name: 'Class Commencement' },
         { id: 'duration', name: 'Duration' },
         { id: 'activity_code', name: 'Activity Code' },
-        { id: 'capacity', name: 'Capacity' },
         { id: 'recurring_until_week', name: 'Recurring Until Week' }
     ];
 
@@ -359,18 +562,11 @@ function validateForm() {
 
     // Validate integer fields
     const duration = parseInt($('#duration').val());
-    const capacity = parseInt($('#capacity').val());
     const recurringWeek = parseInt($('#recurring_until_week').val());
 
     if (duration < 0) {
         showError('Duration must be 0 or greater.');
         $('#duration').focus();
-        return false;
-    }
-
-    if (capacity < 0) {
-        showError('Capacity must be 0 or greater.');
-        $('#capacity').focus();
         return false;
     }
 

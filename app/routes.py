@@ -45,9 +45,15 @@ def generate_multiple_excel():
 
         # Process each entry
         for idx, entry in enumerate(entries):
+            # Support legacy single capacity field for backwards compatibility
+            if 'capacity' in entry and 'group_capacities' not in entry:
+                single_capacity = entry['capacity']
+                group_codes = entry.get('group_codes', [])
+                entry['group_capacities'] = {group: single_capacity for group in group_codes}
+
             # Validate required fields
             required_fields = ['academic_session_code', 'programme_code', 'class_commencement',
-                              'duration', 'activity_code', 'capacity', 'course_codes',
+                              'duration', 'activity_code', 'group_capacities', 'course_codes',
                               'group_codes', 'faculty_codes', 'recurring_until_week']
 
             for field in required_fields:
@@ -57,6 +63,27 @@ def generate_multiple_excel():
                             return jsonify({'error': f'Entry is missing required field: {field}'}), 400
                     else:
                         return jsonify({'error': f'Entry is missing required field: {field}'}), 400
+
+            # Validate group_capacities structure
+            group_capacities = entry.get('group_capacities', {})
+            group_codes = entry.get('group_codes', [])
+
+            if not isinstance(group_capacities, dict):
+                return jsonify({'error': 'group_capacities must be an object'}), 400
+
+            # Verify all selected groups have capacity values
+            for group_code in group_codes:
+                if group_code not in group_capacities:
+                    return jsonify({'error': f'Missing capacity for group: {group_code}'}), 400
+
+                capacity_value = group_capacities[group_code]
+                if not isinstance(capacity_value, int) or capacity_value < 0:
+                    return jsonify({'error': f'Invalid capacity value for group {group_code}'}), 400
+
+            # Verify no extra groups in capacities
+            for group_code in group_capacities.keys():
+                if group_code not in group_codes:
+                    return jsonify({'error': f'Capacity specified for unselected group: {group_code}'}), 400
 
             # Store first programme code for filename
             if programme_code is None:

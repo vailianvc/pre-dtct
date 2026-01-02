@@ -48,10 +48,21 @@
                 </select>
             </div>
 
-            <!-- Capacity -->
+            <!-- Group Capacities -->
             <div class="col-md-6 mb-3">
-                <label for="capacity" class="form-label">Capacity <span class="text-danger">*</span></label>
-                <input type="number" class="form-control" id="capacity" name="capacity" value="0" min="0" required>
+                <label for="capacity_status" class="form-label">Group Capacities <span class="text-danger">*</span></label>
+                <div class="capacity-status-wrapper">
+                    <button type="button" class="btn btn-outline-primary w-100" id="setCapacityBtn" disabled>
+                        <i class="bi bi-pencil-square"></i>
+                        <span id="capacityBtnText">Select groups first</span>
+                    </button>
+                    <div id="capacityStatusDisplay" class="mt-2 d-none">
+                        <div class="alert alert-info mb-0">
+                            <strong>Total Capacity:</strong> <span id="totalCapacityDisplay">0</span>
+                            <span class="ms-3 text-muted">(<span id="groupCountDisplay">0</span> groups)</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -164,5 +175,43 @@
             <p id="errorText"></p>
         </div>
     </div>
+
+<!-- Group Capacity Modal -->
+<div class="modal fade" id="capacityModal" tabindex="-1" aria-labelledby="capacityModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="capacityModalLabel">Set Group Capacities</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Enter the capacity for each selected group. All fields are required.</p>
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="capacityTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="60%">Group Code</th>
+                                <th width="40%">Capacity <span class="text-danger">*</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="capacityTableBody">
+                            <!-- Rows populated dynamically -->
+                        </tbody>
+                        <tfoot class="table-light">
+                            <tr>
+                                <td class="text-end"><strong>Total Capacity:</strong></td>
+                                <td><strong id="modalTotalCapacity">0</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveCapacitiesBtn">Save Capacities</button>
+            </div>
+        </div>
+    </div>
+</div>
 </div>
 {% endblock %}

@@ -30,7 +30,7 @@ def generate_excel_file(rows, programme_code):
     # Write headers
     headers = [
         'ID', 'FormID', 'AcademicSessionCode', 'ProgrammeCode',
-        'ClassCommencement', 'Duration', 'ActivityCode', 'Capacity',
+        'ClassCommencement', 'Duration', 'ActivityCode', 'GroupCodeCapacity', 'TotalCapacity',
         'CourseCode', 'GroupCode', 'FacultyCode',
         'RequestSpecialRoomCode', 'RecurringUntilWeek'
     ]
@@ -47,7 +47,8 @@ def generate_excel_file(rows, programme_code):
             row['class_commencement'],
             row['duration'],
             row['activity_code'],
-            row['capacity'],
+            row['group_code_capacity'],
+            row['total_capacity'],
             row['course_code'],
             row['group_code'],
             row['faculty_code'],
@@ -91,7 +92,7 @@ def generate_excel_file(rows, programme_code):
             class_commencement=row['class_commencement'],
             duration=row['duration'],
             activity_code=row['activity_code'],
-            capacity=row['capacity'],
+            capacity=row['total_capacity'],
             course_code=row['course_code'],
             group_code=row['group_code'],
             faculty_code=row['faculty_code'],
@@ -127,7 +128,7 @@ def generate_excel_file_multiple(all_rows, programme_code, form_ids_list):
     # Write headers
     headers = [
         'ID', 'FormID', 'AcademicSessionCode', 'ProgrammeCode',
-        'ClassCommencement', 'Duration', 'ActivityCode', 'Capacity',
+        'ClassCommencement', 'Duration', 'ActivityCode', 'GroupCodeCapacity', 'TotalCapacity',
         'CourseCode', 'GroupCode', 'FacultyCode',
         'RequestSpecialRoomCode', 'RecurringUntilWeek'
     ]
@@ -146,7 +147,8 @@ def generate_excel_file_multiple(all_rows, programme_code, form_ids_list):
             row['class_commencement'],
             row['duration'],
             row['activity_code'],
-            row['capacity'],
+            row['group_code_capacity'],
+            row['total_capacity'],
             row['course_code'],
             row['group_code'],
             row['faculty_code'],
@@ -193,7 +195,7 @@ def generate_excel_file_multiple(all_rows, programme_code, form_ids_list):
                     class_commencement=row['class_commencement'],
                     duration=row['duration'],
                     activity_code=row['activity_code'],
-                    capacity=row['capacity'],
+                    capacity=row['total_capacity'],
                     course_code=row['course_code'],
                     group_code=row['group_code'],
                     faculty_code=row['faculty_code'],

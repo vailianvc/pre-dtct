@@ -15,7 +15,7 @@ if __name__ == '__main__':
     threading.Thread(target=open_browser, daemon=True).start()
 
     # Run Flask app
-    print("Starting Pre-DTCT Form Application...")
+    print("Starting Pre-DTCT Form Application v2...")
     print("Browser will open automatically at http://127.0.0.1:5000")
     print("Press Ctrl+C to stop the application")
 

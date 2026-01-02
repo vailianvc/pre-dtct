@@ -27,14 +27,23 @@ def expand_rows(form_data):
 
     # Build rows with all combinations
     rows = []
+    group_capacities = form_data.get('group_capacities', {})
+
+    # Calculate total capacity across all groups
+    total_capacity = sum(group_capacities.values())
+
     for course, group, faculty in combinations:
+        # Get capacity for this specific group
+        group_capacity = group_capacities.get(group, 0)
+
         row = {
             'academic_session_code': form_data['academic_session_code'],
             'programme_code': form_data['programme_code'],
             'class_commencement': form_data['class_commencement'],
             'duration': int(form_data['duration']),
             'activity_code': form_data['activity_code'],
-            'capacity': int(form_data['capacity']),
+            'group_code_capacity': int(group_capacity),  # Capacity for this specific group
+            'total_capacity': int(total_capacity),  # Total capacity across all groups
             'course_code': course,
             'group_code': group,
             'faculty_code': faculty,
