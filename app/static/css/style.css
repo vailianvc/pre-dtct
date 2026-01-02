@@ -13,7 +13,7 @@
 }
 
 body {
-    background: linear-gradient(135deg, #1C0F33 0%, #2a1a4d 100%);
+    background: linear-gradient(135deg, #4B2B7F 0%, #E91E8C 100%);
     color: #ffffff;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     min-height: 100vh;
@@ -23,7 +23,7 @@ body {
 
 /* Header Styling */
 .app-header {
-    background: var(--primary-color);
+    background: linear-gradient(to right, #3A1F6B 0%, #4B2B7F 50%, #E91E8C 100%);
     color: white;
     padding: 2rem 1.5rem;
     text-align: center;
@@ -31,8 +31,20 @@ body {
     margin-bottom: 2rem;
 }
 
-.app-header h1 {
-    font-size: 2.5rem;
+.app-header .header-logo {
+    max-width: 400px;
+    width: 100%;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 1.5rem 2rem;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.app-header h2 {
+    font-size: 2rem;
     font-weight: 600;
     margin-bottom: 0.5rem;
 }
@@ -40,6 +52,16 @@ body {
 .app-header p {
     font-size: 1.1rem;
     opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+    .app-header .header-logo {
+        max-width: 280px;
+    }
+
+    .app-header h2 {
+        font-size: 1.5rem;
+    }
 }
 
 /* Form Container */
