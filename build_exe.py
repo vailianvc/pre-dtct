@@ -32,6 +32,7 @@ PyInstaller.__main__.run([
     '--hidden-import=flask_sqlalchemy',
     '--hidden-import=openpyxl',
     '--hidden-import=sqlalchemy',
+    '--hidden-import=config',  # Required for Flask config loading
     '--clean',
     '--noconfirm'
 ])
