@@ -42,4 +42,10 @@ def create_app(config_name=None):
         response.headers['Expires'] = '-1'
         return response
 
+    # Add context processor for current year
+    @app.context_processor
+    def inject_current_year():
+        from datetime import datetime
+        return {'current_year': datetime.now().year}
+
     return app
