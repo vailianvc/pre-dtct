@@ -31,7 +31,7 @@ def generate_excel_file(rows, programme_code):
     headers = [
         'ID', 'FormID', 'AcademicSessionCode', 'ProgrammeCode',
         'ClassCommencement', 'Duration', 'ActivityCode', 'GroupCodeCapacity', 'TotalCapacity',
-        'CourseCode', 'GroupCode', 'FacultyCode',
+        'CourseCode', 'CourseName', 'GroupCode', 'FacultyCode',
         'RequestSpecialRoomCode', 'RecurringUntilWeek'
     ]
     ws.append(headers)
@@ -50,6 +50,7 @@ def generate_excel_file(rows, programme_code):
             row['group_code_capacity'],
             row['total_capacity'],
             row['course_code'],
+            row.get('course_name', ''),
             row['group_code'],
             row['faculty_code'],
             row['request_special_room_code'] or '',
@@ -129,7 +130,7 @@ def generate_excel_file_multiple(all_rows, programme_code, form_ids_list):
     headers = [
         'ID', 'FormID', 'AcademicSessionCode', 'ProgrammeCode',
         'ClassCommencement', 'Duration', 'ActivityCode', 'GroupCodeCapacity', 'TotalCapacity',
-        'CourseCode', 'GroupCode', 'FacultyCode',
+        'CourseCode', 'CourseName', 'GroupCode', 'FacultyCode',
         'RequestSpecialRoomCode', 'RecurringUntilWeek'
     ]
     ws.append(headers)
@@ -150,6 +151,7 @@ def generate_excel_file_multiple(all_rows, programme_code, form_ids_list):
             row['group_code_capacity'],
             row['total_capacity'],
             row['course_code'],
+            row.get('course_name', ''),
             row['group_code'],
             row['faculty_code'],
             row['request_special_room_code'] or '',

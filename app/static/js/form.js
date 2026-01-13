@@ -219,7 +219,7 @@ function updateEntriesTable() {
                 <td>${entry.duration}h</td>
                 <td><small>${entry.activity_code}</small></td>
                 <td>${calculateTotalCapacity(entry.group_capacities)}</td>
-                <td>${formatArrayBadges(entry.course_codes)}</td>
+                <td>${formatCourseInfo(entry.course_codes, entry.course_texts)}</td>
                 <td>${formatArrayBadges(entry.group_codes)}</td>
                 <td>${formatArrayBadges(entry.faculty_codes)}</td>
                 <td><small>${entry.request_special_room_code || '-'}</small></td>
@@ -240,6 +240,20 @@ function updateEntriesTable() {
 function formatArrayBadges(arr) {
     if (!arr || arr.length === 0) return '-';
     return arr.map(item => `<span class="value-badge">${item}</span>`).join('');
+}
+
+function formatCourseInfo(codes, texts) {
+    if (!codes || codes.length === 0) return '-';
+    return codes.map((code, index) => {
+        const text = texts && texts[index] ? texts[index] : code;
+        // Extract course name (after " - ") if available
+        let displayText = code;
+        if (text.includes(' - ')) {
+            const parts = text.split(' - ');
+            displayText = `${parts[0]}<br><small class="text-muted">${parts[1]}</small>`;
+        }
+        return `<span class="value-badge">${displayText}</span>`;
+    }).join('');
 }
 
 function editEntry(index) {

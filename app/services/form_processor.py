@@ -22,6 +22,23 @@ def expand_rows(form_data):
     if not isinstance(faculties, list):
         faculties = [faculties]
 
+    # Create mappings from codes to texts
+    course_texts = form_data.get('course_texts', [])
+    if not isinstance(course_texts, list):
+        course_texts = [course_texts]
+
+    course_name_map = {}
+    for i, code in enumerate(courses):
+        if i < len(course_texts):
+            # Extract just the name part (after " - ") if format is "CODE - Name"
+            text = course_texts[i]
+            if ' - ' in text:
+                course_name_map[code] = text.split(' - ', 1)[1]
+            else:
+                course_name_map[code] = text
+        else:
+            course_name_map[code] = ''
+
     # Create Cartesian product of all combinations
     combinations = list(product(courses, groups, faculties))
 
@@ -45,6 +62,7 @@ def expand_rows(form_data):
             'group_code_capacity': int(group_capacity),  # Capacity for this specific group
             'total_capacity': int(total_capacity),  # Total capacity across all groups
             'course_code': course,
+            'course_name': course_name_map.get(course, ''),
             'group_code': group,
             'faculty_code': faculty,
             'request_special_room_code': form_data.get('request_special_room_code', ''),

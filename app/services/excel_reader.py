@@ -23,8 +23,13 @@ def load_glossary(file_path, glossary_type):
             if not row or not row[0]:
                 continue
 
-            code = str(row[0]).strip() if row[0] else ''
-            description = str(row[1]).strip() if len(row) > 1 and row[1] else ''
+            # Activity glossary has columns swapped: Activity Name (col 0), Activity Code (col 1)
+            if glossary_type == 'activity':
+                code = str(row[1]).strip() if len(row) > 1 and row[1] else ''
+                description = str(row[0]).strip() if row[0] else ''
+            else:
+                code = str(row[0]).strip() if row[0] else ''
+                description = str(row[1]).strip() if len(row) > 1 and row[1] else ''
 
             if code:
                 data.append({'code': code, 'description': description})
