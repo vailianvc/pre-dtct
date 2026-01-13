@@ -54,11 +54,11 @@ def generate_multiple_excel():
             # Validate required fields
             required_fields = ['academic_session_code', 'programme_code', 'class_commencement',
                               'duration', 'activity_code', 'group_capacities', 'course_codes',
-                              'group_codes', 'faculty_codes', 'recurring_until_week']
+                              'group_codes', 'faculty_code', 'recurring_until_week']
 
             for field in required_fields:
                 if field not in entry or entry[field] is None or entry[field] == '':
-                    if field in ['course_codes', 'group_codes', 'faculty_codes']:
+                    if field in ['course_codes', 'group_codes']:
                         if not entry.get(field) or len(entry.get(field, [])) == 0:
                             return jsonify({'error': f'Entry is missing required field: {field}'}), 400
                     else:

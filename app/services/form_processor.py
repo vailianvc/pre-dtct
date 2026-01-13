@@ -12,15 +12,13 @@ def expand_rows(form_data):
     """
     courses = form_data.get('course_codes', [])
     groups = form_data.get('group_codes', [])
-    faculties = form_data.get('faculty_codes', [])
+    faculty = form_data.get('faculty_code', '')
 
-    # Ensure all are lists
+    # Ensure courses and groups are lists
     if not isinstance(courses, list):
         courses = [courses]
     if not isinstance(groups, list):
         groups = [groups]
-    if not isinstance(faculties, list):
-        faculties = [faculties]
 
     # Create mappings from codes to texts
     course_texts = form_data.get('course_texts', [])
@@ -39,8 +37,8 @@ def expand_rows(form_data):
         else:
             course_name_map[code] = ''
 
-    # Create Cartesian product of all combinations
-    combinations = list(product(courses, groups, faculties))
+    # Create Cartesian product of courses and groups
+    combinations = list(product(courses, groups))
 
     # Build rows with all combinations
     rows = []
@@ -49,7 +47,7 @@ def expand_rows(form_data):
     # Calculate total capacity across all groups
     total_capacity = sum(group_capacities.values())
 
-    for course, group, faculty in combinations:
+    for course, group in combinations:
         # Get capacity for this specific group
         group_capacity = group_capacities.get(group, 0)
 

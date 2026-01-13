@@ -66,7 +66,7 @@ function loadGlossaries() {
         { type: 'specialroom', elementId: 'request_special_room_code' },
         { type: 'course', elementId: 'course_codes' },
         { type: 'group', elementId: 'group_codes' },
-        { type: 'faculty', elementId: 'faculty_codes' }
+        { type: 'faculty', elementId: 'faculty_code' }
     ];
 
     glossaryTypes.forEach(glossary => {
@@ -195,8 +195,8 @@ function collectFormData() {
         course_texts: $('#course_codes option:selected').map((i, el) => $(el).text()).get(),
         group_codes: $('#group_codes').val(),
         group_texts: $('#group_codes option:selected').map((i, el) => $(el).text()).get(),
-        faculty_codes: $('#faculty_codes').val(),
-        faculty_texts: $('#faculty_codes option:selected').map((i, el) => $(el).text()).get(),
+        faculty_code: $('#faculty_code').val(),
+        faculty_text: $('#faculty_code option:selected').text(),
         request_special_room_code: $('#request_special_room_code').val() || '',
         request_special_room_text: $('#request_special_room_code option:selected').text(),
         recurring_until_week: parseInt($('#recurring_until_week').val())
@@ -221,7 +221,7 @@ function updateEntriesTable() {
                 <td>${calculateTotalCapacity(entry.group_capacities)}</td>
                 <td>${formatCourseInfo(entry.course_codes, entry.course_texts)}</td>
                 <td>${formatArrayBadges(entry.group_codes)}</td>
-                <td>${formatArrayBadges(entry.faculty_codes)}</td>
+                <td><small>${entry.faculty_code || '-'}</small></td>
                 <td><small>${entry.request_special_room_code || '-'}</small></td>
                 <td>${entry.recurring_until_week}</td>
                 <td>
@@ -267,7 +267,7 @@ function editEntry(index) {
     $('#activity_code').val(entry.activity_code).trigger('change');
     $('#course_codes').val(entry.course_codes).trigger('change');
     $('#group_codes').val(entry.group_codes).trigger('change');
-    $('#faculty_codes').val(entry.faculty_codes).trigger('change');
+    $('#faculty_code').val(entry.faculty_code).trigger('change');
     $('#request_special_room_code').val(entry.request_special_room_code).trigger('change');
     $('#recurring_until_week').val(entry.recurring_until_week);
 
@@ -546,6 +546,7 @@ function validateForm() {
         { id: 'class_commencement', name: 'Class Commencement' },
         { id: 'duration', name: 'Duration' },
         { id: 'activity_code', name: 'Activity Code' },
+        { id: 'faculty_code', name: 'Faculty Code' },
         { id: 'recurring_until_week', name: 'Recurring Until Week' }
     ];
 
@@ -561,8 +562,7 @@ function validateForm() {
     // Check multi-select fields
     const multiSelectFields = [
         { id: 'course_codes', name: 'Course Code(s)' },
-        { id: 'group_codes', name: 'Group Code(s)' },
-        { id: 'faculty_codes', name: 'Faculty Code(s)' }
+        { id: 'group_codes', name: 'Group Code(s)' }
     ];
 
     for (const field of multiSelectFields) {
