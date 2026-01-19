@@ -14,11 +14,11 @@
                 </select>
             </div>
 
-            <!-- Programme Code -->
+            <!-- Programme Code (Optional) -->
             <div class="col-md-6 mb-3">
-                <label for="programme_code" class="form-label">Programme Code <span class="text-danger">*</span></label>
-                <select class="form-select select2-single" id="programme_code" name="programme_code" required>
-                    <option value="">Select Programme</option>
+                <label for="programme_code" class="form-label">Programme Code</label>
+                <select class="form-select select2-single" id="programme_code" name="programme_code">
+                    <option value="">Select Programme (Optional)</option>
                 </select>
             </div>
         </div>
@@ -41,11 +41,31 @@
 
         <div class="row">
             <!-- Activity Code -->
-            <div class="col-md-6 mb-3">
+            <div class="col-md-12 mb-3">
                 <label for="activity_code" class="form-label">Activity Code <span class="text-danger">*</span></label>
                 <select class="form-select select2-single" id="activity_code" name="activity_code" required>
                     <option value="">Select Activity</option>
                 </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Course Code (Multi-select) -->
+            <div class="col-md-12 mb-3">
+                <label for="course_codes" class="form-label">Course Code(s) <span class="text-danger">*</span></label>
+                <select class="form-select select2-multiple" id="course_codes" name="course_codes" multiple required>
+                </select>
+                <div class="form-text">You can select multiple courses in one class session</div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Group Code (Multi-select) -->
+            <div class="col-md-6 mb-3">
+                <label for="group_codes" class="form-label">Group Code(s) <span class="text-danger">*</span></label>
+                <select class="form-select select2-multiple" id="group_codes" name="group_codes" multiple required>
+                </select>
+                <div class="form-text">You can select multiple groups in one class session</div>
             </div>
 
             <!-- Group Capacities -->
@@ -67,48 +87,41 @@
         </div>
 
         <div class="row">
-            <!-- Course Code (Multi-select) -->
-            <div class="col-md-12 mb-3">
-                <label for="course_codes" class="form-label">Course Code(s) <span class="text-danger">*</span></label>
-                <select class="form-select select2-multiple" id="course_codes" name="course_codes" multiple required>
-                </select>
-                <div class="form-text">You can select multiple courses in one class session</div>
-            </div>
-        </div>
-
-        <div class="row">
-            <!-- Group Code (Multi-select) -->
-            <div class="col-md-12 mb-3">
-                <label for="group_codes" class="form-label">Group Code(s) <span class="text-danger">*</span></label>
-                <select class="form-select select2-multiple" id="group_codes" name="group_codes" multiple required>
-                </select>
-                <div class="form-text">You can select multiple groups in one class session</div>
-            </div>
-        </div>
-
-        <div class="row">
-            <!-- Faculty Code (Single-select) -->
-            <div class="col-md-12 mb-3">
-                <label for="faculty_code" class="form-label">Faculty Code <span class="text-danger">*</span></label>
-                <select class="form-select select2-single" id="faculty_code" name="faculty_code" required>
-                    <option value="">Select Faculty</option>
-                </select>
-            </div>
-        </div>
-
-        <div class="row">
-            <!-- Special Room Code (Optional) -->
-            <div class="col-md-6 mb-3">
-                <label for="request_special_room_code" class="form-label">Request Special Room Code</label>
-                <select class="form-select select2-single" id="request_special_room_code" name="request_special_room_code">
-                    <option value="">None (Optional)</option>
-                </select>
-            </div>
-
             <!-- Recurring Until Week -->
             <div class="col-md-6 mb-3">
                 <label for="recurring_until_week" class="form-label">Recurring Until Week <span class="text-danger">*</span></label>
                 <input type="number" class="form-control" id="recurring_until_week" name="recurring_until_week" value="14" min="1" required>
+            </div>
+
+            <!-- Exclude Dates -->
+            <div class="col-md-6 mb-3">
+                <label class="form-label">Exclude Dates</label>
+                <div class="exclude-dates-wrapper">
+                    <button type="button" class="btn btn-outline-primary w-100" id="setExcludeDatesBtn" disabled>
+                        <i class="bi bi-calendar-x"></i>
+                        <span id="excludeDatesBtnText">Set commencement date first</span>
+                    </button>
+                </div>
+                <div class="form-text">Optionally exclude specific dates from the recurring schedule</div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Week Venue and Lecturer Details -->
+            <div class="col-md-12 mb-3">
+                <label class="form-label">Week Venue and Lecturer Details <span class="text-danger">*</span></label>
+                <div class="week-venue-wrapper">
+                    <button type="button" class="btn btn-outline-primary w-100" id="setWeekVenueBtn" disabled>
+                        <i class="bi bi-calendar-week"></i>
+                        <span id="weekVenueBtnText">Set commencement date and weeks first</span>
+                    </button>
+                    <div id="weekVenueStatusDisplay" class="mt-2 d-none">
+                        <div class="alert alert-info mb-0">
+                            <strong>Configured:</strong> <span id="weekVenueCountDisplay">0</span> weeks
+                        </div>
+                    </div>
+                </div>
+                <div class="form-text">Configure faculty and special room for each recurring week</div>
             </div>
         </div>
 
@@ -141,15 +154,14 @@
                         <th>#</th>
                         <th>Academic Session</th>
                         <th>Programme</th>
-                        <th>Date</th>
+                        <th>Start Date</th>
                         <th>Duration</th>
                         <th>Activity</th>
                         <th>Capacity</th>
                         <th>Courses</th>
                         <th>Groups</th>
-                        <th>Faculty</th>
-                        <th>Special Room</th>
                         <th>Weeks</th>
+                        <th>Excluded</th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -209,6 +221,92 @@
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary" id="saveCapacitiesBtn">Save Capacities</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Exclude Dates Modal -->
+<div class="modal fade" id="excludeDatesModal" tabindex="-1" aria-labelledby="excludeDatesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="excludeDatesModalLabel">Exclude Dates from Schedule</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Select the dates you want to exclude from the recurring schedule. The schedule will continue to the next available week to maintain the total week count.</p>
+                <div id="excludeDatesListContainer">
+                    <!-- Checkboxes populated dynamically -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveExcludeDatesBtn">Save Exclusions</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Week Venue and Lecturer Details Modal -->
+<div class="modal fade" id="weekVenueModal" tabindex="-1" aria-labelledby="weekVenueModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="weekVenueModalLabel">Week Venue and Lecturer Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted">Configure the Faculty Code and Special Room Code for each week. You can apply the same values to all weeks using the "Apply to All" feature.</p>
+
+                <!-- Apply to All Section -->
+                <div class="card mb-3">
+                    <div class="card-header bg-light">
+                        <strong>Apply to All Weeks</strong>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-5">
+                                <label class="form-label">Faculty Code</label>
+                                <select class="form-select" id="applyAllFaculty">
+                                    <option value="">Select Faculty</option>
+                                </select>
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Special Room Code</label>
+                                <select class="form-select" id="applyAllSpecialRoom">
+                                    <option value="">None (Optional)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2 d-flex align-items-end">
+                                <button type="button" class="btn btn-secondary w-100" id="applyToAllWeeksBtn">
+                                    Apply to All
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Week Details Table -->
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="weekVenueTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="10%">Week</th>
+                                <th width="25%">Date</th>
+                                <th width="35%">Faculty Code <span class="text-danger">*</span></th>
+                                <th width="30%">Special Room Code</th>
+                            </tr>
+                        </thead>
+                        <tbody id="weekVenueTableBody">
+                            <!-- Rows populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="saveWeekVenueBtn">Save Week Details</button>
             </div>
         </div>
     </div>

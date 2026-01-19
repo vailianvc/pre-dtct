@@ -51,10 +51,10 @@ def generate_multiple_excel():
                 group_codes = entry.get('group_codes', [])
                 entry['group_capacities'] = {group: single_capacity for group in group_codes}
 
-            # Validate required fields
-            required_fields = ['academic_session_code', 'programme_code', 'class_commencement',
+            # V4: Validate required fields (removed programme_code and faculty_code)
+            required_fields = ['academic_session_code', 'class_commencement',
                               'duration', 'activity_code', 'group_capacities', 'course_codes',
-                              'group_codes', 'faculty_code', 'recurring_until_week']
+                              'group_codes', 'recurring_until_week']
 
             for field in required_fields:
                 if field not in entry or entry[field] is None or entry[field] == '':
@@ -63,6 +63,16 @@ def generate_multiple_excel():
                             return jsonify({'error': f'Entry is missing required field: {field}'}), 400
                     else:
                         return jsonify({'error': f'Entry is missing required field: {field}'}), 400
+
+            # V4: Validate week_venue_details
+            week_venue_details = entry.get('week_venue_details', {})
+            if not week_venue_details or len(week_venue_details) == 0:
+                return jsonify({'error': 'Week venue and lecturer details are required'}), 400
+
+            # V4: Validate each week has a faculty code
+            for date_key, detail in week_venue_details.items():
+                if not detail.get('faculty_code'):
+                    return jsonify({'error': f'Faculty code missing for date: {date_key}'}), 400
 
             # Validate group_capacities structure
             group_capacities = entry.get('group_capacities', {})
@@ -85,9 +95,9 @@ def generate_multiple_excel():
                 if group_code not in group_codes:
                     return jsonify({'error': f'Capacity specified for unselected group: {group_code}'}), 400
 
-            # Store first programme code for filename
+            # Store first programme code for filename (V4: may be empty)
             if programme_code is None:
-                programme_code = entry['programme_code']
+                programme_code = entry.get('programme_code', '') or 'GENERAL'
 
             # Process and expand rows for this entry
             expanded_rows = form_processor.process_form(entry)

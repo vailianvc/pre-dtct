@@ -547,3 +547,241 @@ body {
         padding: 0.4rem 0.6rem;
     }
 }
+
+/* ===== V4: Exclude Dates Styling ===== */
+
+.exclude-dates-wrapper {
+    position: relative;
+}
+
+#setExcludeDatesBtn {
+    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+    font-weight: 500;
+}
+
+#setExcludeDatesBtn i {
+    font-size: 1.1rem;
+}
+
+#setExcludeDatesBtn.btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000;
+}
+
+.exclude-date-badge {
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+}
+
+.exclude-date-badge .btn-close {
+    font-size: 0.6rem;
+    padding: 0.25rem;
+}
+
+/* Exclude Dates Modal */
+#excludeDatesModal .modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+#excludeDatesModal .modal-header {
+    background: var(--primary-color);
+    color: white;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    padding: 1.25rem 1.5rem;
+}
+
+#excludeDatesModal .modal-body {
+    padding: 1.5rem;
+    color: #333;
+}
+
+#excludeDatesModal .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+#excludeDatesModal .table {
+    margin-bottom: 0;
+}
+
+#excludeDatesModal .table thead th {
+    background-color: #f8f9fa;
+    color: var(--primary-color);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+#excludeDatesModal .table tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+.exclude-date-checkbox {
+    width: 1.2rem;
+    height: 1.2rem;
+    cursor: pointer;
+}
+
+.exclude-date-checkbox:checked {
+    background-color: #ffc107;
+    border-color: #ffc107;
+}
+
+/* ===== V4: Week Venue and Lecturer Details Styling ===== */
+
+.week-venue-wrapper {
+    position: relative;
+}
+
+#setWeekVenueBtn {
+    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+    font-weight: 500;
+}
+
+#setWeekVenueBtn i {
+    font-size: 1.1rem;
+}
+
+#setWeekVenueBtn.btn-warning {
+    background-color: #ffc107;
+    border-color: #ffc107;
+    color: #000;
+}
+
+#setWeekVenueBtn.btn-warning:hover {
+    background-color: #ffb300;
+    border-color: #ffb300;
+}
+
+#weekVenueStatusDisplay .alert {
+    font-size: 0.9rem;
+    padding: 0.75rem 1rem;
+}
+
+/* Week Venue Modal */
+#weekVenueModal .modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+#weekVenueModal .modal-header {
+    background: var(--primary-color);
+    color: white;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    padding: 1.25rem 1.5rem;
+}
+
+#weekVenueModal .modal-title {
+    font-weight: 600;
+    font-size: 1.25rem;
+}
+
+#weekVenueModal .modal-body {
+    padding: 1.5rem;
+    color: #333;
+}
+
+#weekVenueModal .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+#weekVenueTable {
+    margin-bottom: 0;
+}
+
+#weekVenueTable thead th {
+    background-color: #f8f9fa;
+    color: var(--primary-color);
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+    font-size: 0.9rem;
+}
+
+#weekVenueTable tbody td {
+    vertical-align: middle;
+    padding: 0.75rem;
+}
+
+#weekVenueTable tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+/* Select2 in Week Venue Modal */
+#weekVenueModal .select2-container {
+    width: 100% !important;
+}
+
+#weekVenueModal .select2-container .select2-selection--single {
+    height: 38px;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+}
+
+#weekVenueModal .select2-container .select2-selection--single .select2-selection__rendered {
+    line-height: 34px;
+    font-size: 0.9rem;
+}
+
+#weekVenueModal .select2-container .select2-selection--single .select2-selection__arrow {
+    height: 36px;
+}
+
+#weekVenueModal .select2-container--bootstrap-5 .select2-selection--single:focus {
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 0.2rem rgba(6, 147, 227, 0.25);
+}
+
+/* Invalid state for Select2 in modal */
+#weekVenueModal .select2-container--bootstrap-5.select2-invalid .select2-selection {
+    border-color: #dc3545;
+}
+
+#weekVenueModal .select2-container--bootstrap-5.select2-invalid .select2-selection:focus {
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+/* Apply to All Card */
+#weekVenueModal .card {
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+}
+
+#weekVenueModal .card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    padding: 0.75rem 1rem;
+}
+
+/* Responsive adjustments for Week Venue Modal */
+@media (max-width: 768px) {
+    #weekVenueModal .modal-dialog {
+        margin: 0.5rem;
+    }
+
+    #weekVenueTable {
+        font-size: 0.8rem;
+    }
+
+    .week-faculty-select,
+    .week-special-room-select {
+        font-size: 0.8rem;
+        padding: 0.3rem 0.5rem;
+    }
+
+    #weekVenueModal .card-body .row > div {
+        margin-bottom: 0.75rem;
+    }
+}
