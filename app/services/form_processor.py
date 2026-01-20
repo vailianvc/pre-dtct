@@ -96,6 +96,15 @@ def expand_rows(form_data):
     # Calculate total capacity across all groups
     total_capacity = sum(group_capacities.values())
 
+    # Generate CourseGroupID mapping for unique course-group combinations
+    course_group_map = {}
+    course_group_counter = 1
+    for course, group in product(courses, groups):
+        key = (course, group)
+        if key not in course_group_map:
+            course_group_map[key] = course_group_counter
+            course_group_counter += 1
+
     for course, group, date_str in combinations:
         # Get capacity for this specific group
         group_capacity = group_capacities.get(group, 0)
@@ -108,7 +117,8 @@ def expand_rows(form_data):
         row = {
             'academic_session_code': form_data['academic_session_code'],
             'programme_code': form_data.get('programme_code', ''),  # V4: Now optional
-            'class_commencement': date_str,  # V4: Per-week date instead of single date
+            'class_commencement': form_data['class_commencement'],  # Original first class date
+            'scheduled_date': date_str,  # V4: Per-week recurring date
             'duration': int(form_data['duration']),
             'activity_code': form_data['activity_code'],
             'group_code_capacity': int(group_capacity),  # Capacity for this specific group
@@ -118,7 +128,8 @@ def expand_rows(form_data):
             'group_code': group,
             'faculty_code': faculty_code,  # V4: Per-week faculty
             'request_special_room_code': special_room_code,  # V4: Per-week special room
-            'recurring_until_week': int(form_data['recurring_until_week'])
+            'recurring_until_week': int(form_data['recurring_until_week']),
+            'course_group_seq': course_group_map[(course, group)]  # Sequential number for CourseGroupID
         }
         rows.append(row)
 

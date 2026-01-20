@@ -29,8 +29,8 @@ def generate_excel_file(rows, programme_code):
 
     # Write headers
     headers = [
-        'ID', 'FormID', 'AcademicSessionCode', 'ProgrammeCode',
-        'ClassCommencement', 'Duration', 'ActivityCode', 'GroupCodeCapacity', 'TotalCapacity',
+        'ID', 'FormID', 'CourseGroupID', 'AcademicSessionCode', 'ProgrammeCode',
+        'ClassCommencement', 'ScheduledDate', 'Duration', 'ActivityCode', 'GroupCodeCapacity', 'TotalCapacity',
         'CourseCode', 'CourseName', 'GroupCode', 'FacultyCode',
         'RequestSpecialRoomCode', 'RecurringUntilWeek'
     ]
@@ -39,12 +39,16 @@ def generate_excel_file(rows, programme_code):
     # Write data rows
     for i, row in enumerate(rows):
         row_id = row_ids[i]
+        # Generate CourseGroupID from FormID and sequential number
+        course_group_id = f"{form_id}-{row['course_group_seq']:02d}"
         ws.append([
             row_id,
             form_id,
+            course_group_id,
             row['academic_session_code'],
             row['programme_code'],
             row['class_commencement'],
+            row['scheduled_date'],
             row['duration'],
             row['activity_code'],
             row['group_code_capacity'],
@@ -128,8 +132,8 @@ def generate_excel_file_multiple(all_rows, programme_code, form_ids_list):
 
     # Write headers
     headers = [
-        'ID', 'FormID', 'AcademicSessionCode', 'ProgrammeCode',
-        'ClassCommencement', 'Duration', 'ActivityCode', 'GroupCodeCapacity', 'TotalCapacity',
+        'ID', 'FormID', 'CourseGroupID', 'AcademicSessionCode', 'ProgrammeCode',
+        'ClassCommencement', 'ScheduledDate', 'Duration', 'ActivityCode', 'GroupCodeCapacity', 'TotalCapacity',
         'CourseCode', 'CourseName', 'GroupCode', 'FacultyCode',
         'RequestSpecialRoomCode', 'RecurringUntilWeek'
     ]
@@ -139,13 +143,17 @@ def generate_excel_file_multiple(all_rows, programme_code, form_ids_list):
     for i, row in enumerate(all_rows):
         row_id = row_ids[i]
         form_id = row.get('form_id_temp', '')  # Get the temporary FormID assigned earlier
+        # Generate CourseGroupID from FormID and sequential number
+        course_group_id = f"{form_id}-{row['course_group_seq']:02d}"
 
         ws.append([
             row_id,
             form_id,
+            course_group_id,
             row['academic_session_code'],
             row['programme_code'],
             row['class_commencement'],
+            row['scheduled_date'],
             row['duration'],
             row['activity_code'],
             row['group_code_capacity'],
