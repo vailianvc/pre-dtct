@@ -235,10 +235,11 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p class="text-muted">Select the dates you want to exclude from the recurring schedule. The schedule will continue to the next available week to maintain the total week count.</p>
+                <p class="text-muted">Select the dates you want to exclude from the recurring schedule. Optionally specify a replacement date for each exclusion. Dates excluded without a replacement will reduce the total number of scheduled weeks.</p>
                 <div id="excludeDatesListContainer">
                     <!-- Checkboxes populated dynamically -->
                 </div>
+                <div id="excludeDatesValidationError" class="alert alert-danger mt-3 d-none"></div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>

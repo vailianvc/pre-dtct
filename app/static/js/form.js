@@ -7,7 +7,8 @@ let groupCapacities = {}; // { "GROUP001": 30, "GROUP002": 45, ... }
 let capacitiesConfigured = false; // Tracks whether capacities have been set
 
 // V4: Global state for excluded dates
-let excludedDates = []; // Array of date strings in YYYY-MM-DD format
+// Array of objects: [{ date: "2026-02-09", replacement: "2026-03-01" }, { date: "2026-02-16", replacement: null }]
+let excludedDates = [];
 
 // V4: Global state for week venue and lecturer details
 let weekVenueDetails = {}; // { "2026-01-01": { faculty_code: "FAC001", special_room_code: "" }, ... }
@@ -241,9 +242,17 @@ function updateEntriesTable() {
     tbody.empty();
 
     entries.forEach((entry, index) => {
-        // V4: Calculate excluded dates display
-        const excludedCount = (entry.excluded_dates || []).length;
-        const excludedText = excludedCount > 0 ? `${excludedCount} excluded` : '-';
+        // V4: Calculate excluded dates display with replacement count
+        const excludedArr = entry.excluded_dates || [];
+        const excludedCount = excludedArr.length;
+        const replacementCount = excludedArr.filter(e => e && e.replacement).length;
+        let excludedText = '-';
+        if (excludedCount > 0) {
+            excludedText = `${excludedCount} excluded`;
+            if (replacementCount > 0) {
+                excludedText += `, ${replacementCount} replaced`;
+            }
+        }
 
         const row = `
             <tr>
@@ -540,6 +549,9 @@ function saveGroupCapacities() {
         return;
     }
 
+    // Hide any previous error message
+    $('#errorMessage').addClass('d-none');
+
     // Save to global state
     groupCapacities = newCapacities;
     capacitiesConfigured = true;
@@ -706,43 +718,70 @@ function showError(message) {
 function calculateRecurringDates(startDateStr, weekCount, excludedDatesArr) {
     /**
      * Calculate recurring dates based on start date, week count, and exclusions.
-     * If a date is excluded, continues to next week to maintain total count.
+     * If a date is excluded and has a replacement, use the replacement date.
+     * If a date is excluded without replacement, skip it entirely (no additional week added).
      *
      * @param {string} startDateStr - Start date in YYYY-MM-DD format
-     * @param {number} weekCount - Number of weeks to generate
-     * @param {Array<string>} excludedDatesArr - Array of dates to skip (YYYY-MM-DD format)
-     * @returns {Array<{date: string, weekNumber: number, displayDate: string}>} - Array of date objects
+     * @param {number} weekCount - Number of weeks to iterate through
+     * @param {Array<{date: string, replacement: string|null}>} excludedDatesArr - Array of exclusion objects
+     * @returns {Array<{date: string, weekNumber: number, displayDate: string, isReplacement: boolean}>} - Array of date objects
      */
     const result = [];
-    const excludedSet = new Set(excludedDatesArr || []);
 
     if (!startDateStr || weekCount < 1) {
         return result;
     }
 
+    // Build lookup for excluded dates and their replacements
+    // Handle both old format (array of strings) and new format (array of objects)
+    const excludedMap = new Map();
+    (excludedDatesArr || []).forEach(item => {
+        if (typeof item === 'string') {
+            // Old format: just a date string, no replacement
+            excludedMap.set(item, null);
+        } else if (item && item.date) {
+            // New format: object with date and replacement
+            excludedMap.set(item.date, item.replacement || null);
+        }
+    });
+
     // Parse the date string manually to avoid timezone issues
     const [year, month, day] = startDateStr.split('-').map(Number);
     let currentDate = new Date(year, month - 1, day); // month is 0-indexed
-    let weekNumber = 1;
 
-    while (result.length < weekCount) {
+    // Iterate through exactly weekCount weeks
+    for (let weekNumber = 1; weekNumber <= weekCount; weekNumber++) {
         // Format date as YYYY-MM-DD using local date methods
         const y = currentDate.getFullYear();
         const m = String(currentDate.getMonth() + 1).padStart(2, '0');
         const d = String(currentDate.getDate()).padStart(2, '0');
         const dateStr = `${y}-${m}-${d}`;
 
-        if (!excludedSet.has(dateStr)) {
+        if (excludedMap.has(dateStr)) {
+            // This date is excluded
+            const replacement = excludedMap.get(dateStr);
+            if (replacement) {
+                // Use replacement date instead
+                result.push({
+                    date: replacement,
+                    weekNumber: weekNumber,
+                    displayDate: formatDateForDisplay(replacement),
+                    isReplacement: true,
+                    originalDate: dateStr
+                });
+            }
+            // If no replacement, skip this week entirely (don't add to result)
+        } else {
             result.push({
                 date: dateStr,
                 weekNumber: weekNumber,
-                displayDate: formatDateForDisplay(dateStr)
+                displayDate: formatDateForDisplay(dateStr),
+                isReplacement: false
             });
         }
 
         // Move to next week
         currentDate.setDate(currentDate.getDate() + 7);
-        weekNumber++;
     }
 
     return result;
@@ -837,9 +876,10 @@ function renderExcludeDatesCheckboxes(dates) {
         <table class="table table-bordered">
             <thead class="table-light">
                 <tr>
-                    <th width="15%">Exclude</th>
-                    <th width="15%">Week</th>
-                    <th>Date</th>
+                    <th width="10%">Exclude</th>
+                    <th width="12%">Week</th>
+                    <th width="28%">Date</th>
+                    <th width="50%">Replacement Date</th>
                 </tr>
             </thead>
             <tbody id="excludeDatesTableBody">
@@ -850,31 +890,179 @@ function renderExcludeDatesCheckboxes(dates) {
 
     const tbody = $('#excludeDatesTableBody');
 
+    // Build set of all recurring dates for validation
+    const allRecurringDates = new Set(dates.map(d => d.date));
+
     dates.forEach((dateObj) => {
-        const isExcluded = excludedDates.includes(dateObj.date);
+        // Find existing exclusion data if any
+        const existingExclusion = excludedDates.find(e => e.date === dateObj.date);
+        const isExcluded = !!existingExclusion;
+        const replacementValue = existingExclusion ? (existingExclusion.replacement || '') : '';
+
         const row = `
-            <tr>
+            <tr data-date="${dateObj.date}">
                 <td class="text-center">
                     <input type="checkbox" class="form-check-input exclude-date-checkbox"
                            data-date="${dateObj.date}" ${isExcluded ? 'checked' : ''}>
                 </td>
                 <td class="text-center"><strong>Week ${dateObj.weekNumber}</strong></td>
                 <td>${dateObj.displayDate}</td>
+                <td>
+                    <input type="date" class="form-control replacement-date-input"
+                           data-date="${dateObj.date}"
+                           value="${replacementValue}"
+                           ${isExcluded ? '' : 'disabled'}>
+                    <div class="replacement-error text-danger small mt-1 d-none"></div>
+                </td>
             </tr>
         `;
         tbody.append(row);
     });
+
+    // Bind checkbox toggle handlers
+    bindExcludeDateCheckboxHandlers();
+
+    // Bind replacement date validation handlers
+    bindReplacementDateValidationHandlers(allRecurringDates);
+}
+
+function bindExcludeDateCheckboxHandlers() {
+    $('.exclude-date-checkbox').off('change').on('change', function() {
+        const checkbox = $(this);
+        const dateValue = checkbox.data('date');
+        const row = checkbox.closest('tr');
+        const replacementInput = row.find('.replacement-date-input');
+        const errorDiv = row.find('.replacement-error');
+
+        if (checkbox.is(':checked')) {
+            replacementInput.prop('disabled', false);
+        } else {
+            replacementInput.prop('disabled', true);
+            replacementInput.val('');
+            replacementInput.removeClass('is-invalid');
+            errorDiv.addClass('d-none').text('');
+        }
+
+        // Clear global validation error
+        $('#excludeDatesValidationError').addClass('d-none');
+    });
+}
+
+function bindReplacementDateValidationHandlers(allRecurringDates) {
+    $('.replacement-date-input').off('change input').on('change input', function() {
+        const input = $(this);
+        const excludedDate = input.data('date');
+        const replacementDate = input.val();
+        const errorDiv = input.siblings('.replacement-error');
+
+        // Clear previous error
+        input.removeClass('is-invalid');
+        errorDiv.addClass('d-none').text('');
+        $('#excludeDatesValidationError').addClass('d-none');
+
+        if (!replacementDate) {
+            return; // Empty is valid
+        }
+
+        // Validate replacement date
+        const validationResult = validateReplacementDate(replacementDate, excludedDate, allRecurringDates);
+        if (!validationResult.valid) {
+            input.addClass('is-invalid');
+            errorDiv.removeClass('d-none').text(validationResult.message);
+        }
+    });
+}
+
+function validateReplacementDate(replacementDate, excludedDate, allRecurringDates) {
+    /**
+     * Validate a replacement date.
+     *
+     * Rules:
+     * 1. Replacement date cannot equal the excluded date
+     * 2. Replacement date cannot be an existing recurring date
+     * 3. Replacement date cannot duplicate another replacement date
+     */
+
+    // Rule 1: Cannot equal the excluded date
+    if (replacementDate === excludedDate) {
+        return { valid: false, message: 'Replacement date cannot be the same as the excluded date.' };
+    }
+
+    // Rule 2: Cannot be an existing recurring date
+    if (allRecurringDates.has(replacementDate)) {
+        return { valid: false, message: 'Replacement date cannot be an existing recurring date.' };
+    }
+
+    // Rule 3: Cannot duplicate another replacement date
+    const otherReplacements = [];
+    $('.replacement-date-input').each(function() {
+        const input = $(this);
+        const inputDate = input.data('date');
+        if (inputDate !== excludedDate && input.val()) {
+            otherReplacements.push(input.val());
+        }
+    });
+
+    if (otherReplacements.includes(replacementDate)) {
+        return { valid: false, message: 'This replacement date is already used for another exclusion.' };
+    }
+
+    return { valid: true, message: '' };
 }
 
 function saveExcludeDates() {
-    // Collect all checked dates
+    // Build set of all recurring dates for validation
+    const commencementDate = $('#class_commencement').val();
+    const recurringWeeks = parseInt($('#recurring_until_week').val()) || 0;
+    const allDates = calculateAllRecurringDates(commencementDate, recurringWeeks);
+    const allRecurringDates = new Set(allDates.map(d => d.date));
+
+    // Collect all checked dates with replacement values
     const newExcludedDates = [];
+    const errors = [];
+    const replacementDatesSeen = new Set();
+
     $('.exclude-date-checkbox:checked').each(function() {
-        newExcludedDates.push($(this).data('date'));
+        const checkbox = $(this);
+        const excludedDate = checkbox.data('date');
+        const row = checkbox.closest('tr');
+        const replacementInput = row.find('.replacement-date-input');
+        const replacementDate = replacementInput.val() || null;
+
+        // Validate replacement date if provided
+        if (replacementDate) {
+            const validationResult = validateReplacementDate(replacementDate, excludedDate, allRecurringDates);
+            if (!validationResult.valid) {
+                errors.push(`${formatDateForDisplay(excludedDate)}: ${validationResult.message}`);
+                replacementInput.addClass('is-invalid');
+                row.find('.replacement-error').removeClass('d-none').text(validationResult.message);
+            } else if (replacementDatesSeen.has(replacementDate)) {
+                errors.push(`${formatDateForDisplay(excludedDate)}: This replacement date is already used for another exclusion.`);
+                replacementInput.addClass('is-invalid');
+                row.find('.replacement-error').removeClass('d-none').text('This replacement date is already used for another exclusion.');
+            } else {
+                replacementDatesSeen.add(replacementDate);
+            }
+        }
+
+        newExcludedDates.push({
+            date: excludedDate,
+            replacement: replacementDate
+        });
     });
 
+    // Show validation errors if any
+    if (errors.length > 0) {
+        $('#excludeDatesValidationError')
+            .removeClass('d-none')
+            .html('<strong>Please fix the following errors:</strong><ul class="mb-0 mt-2">' +
+                errors.map(e => `<li>${e}</li>`).join('') + '</ul>');
+        return;
+    }
+
+    // Sort by date
+    newExcludedDates.sort((a, b) => a.date.localeCompare(b.date));
     excludedDates = newExcludedDates;
-    excludedDates.sort();
 
     updateExcludeDatesDisplay();
     bootstrap.Modal.getInstance(document.getElementById('excludeDatesModal')).hide();
@@ -890,7 +1078,13 @@ function updateExcludeDatesDisplay() {
         btn.html('<i class="bi bi-calendar-x"></i> <span id="excludeDatesBtnText">No dates excluded</span>');
         btn.removeClass('btn-warning').addClass('btn-outline-primary');
     } else {
-        btn.html('<i class="bi bi-calendar-x"></i> <span id="excludeDatesBtnText">' + excludedDates.length + ' date(s) excluded</span>');
+        // Count how many have replacement dates
+        const replacementCount = excludedDates.filter(e => e.replacement).length;
+        let displayText = `${excludedDates.length} excluded`;
+        if (replacementCount > 0) {
+            displayText += `, ${replacementCount} replaced`;
+        }
+        btn.html('<i class="bi bi-calendar-x"></i> <span id="excludeDatesBtnText">' + displayText + '</span>');
         btn.removeClass('btn-outline-primary').addClass('btn-warning');
     }
 }
@@ -971,10 +1165,19 @@ function populateWeekVenueTable(dates) {
     tableBody.empty();
 
     dates.forEach((dateObj, index) => {
+        // Show replacement indicator if this is a replacement date
+        let dateDisplay = dateObj.displayDate;
+        let rowClass = '';
+        if (dateObj.isReplacement) {
+            dateDisplay = `<span class="replacement-indicator">${dateObj.displayDate}</span>
+                          <br><small class="text-muted">Replaces: ${formatDateForDisplay(dateObj.originalDate)}</small>`;
+            rowClass = 'replacement-row';
+        }
+
         const row = `
-            <tr data-date="${dateObj.date}">
+            <tr data-date="${dateObj.date}" class="${rowClass}">
                 <td class="text-center"><strong>Week ${index + 1}</strong></td>
-                <td>${dateObj.displayDate}</td>
+                <td>${dateDisplay}</td>
                 <td>
                     <select class="form-select week-faculty-select" data-date="${dateObj.date}">
                         <option value="">Select Faculty</option>
@@ -1158,6 +1361,9 @@ function saveWeekVenueDetails() {
         showError('Please select a Faculty Code for all weeks.');
         return;
     }
+
+    // Hide any previous error message
+    $('#errorMessage').addClass('d-none');
 
     // Save to global state
     weekVenueDetails = newDetails;

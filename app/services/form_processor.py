@@ -6,27 +6,54 @@ def calculate_recurring_dates(start_date_str, week_count, excluded_dates):
     """
     Calculate recurring dates based on start date, week count, and exclusions.
 
+    Supports both old format (list of date strings) and new format (list of objects
+    with 'date' and 'replacement' keys) for backward compatibility.
+
+    If a date is excluded with a replacement, the replacement date is used.
+    If a date is excluded without a replacement, that week is skipped entirely
+    (no additional week is added to compensate).
+
     Args:
         start_date_str: Start date in YYYY-MM-DD format
-        week_count: Number of weeks to generate
-        excluded_dates: List of dates to skip (YYYY-MM-DD format)
+        week_count: Number of weeks to iterate through
+        excluded_dates: List of dates to skip or objects with replacement dates
+            Old format: ["2026-02-09", "2026-02-16"]
+            New format: [{"date": "2026-02-09", "replacement": "2026-03-01"}, ...]
 
     Returns:
-        List of date strings in YYYY-MM-DD format
+        List of date strings in YYYY-MM-DD format (using replacement dates where specified)
     """
     result = []
-    excluded_set = set(excluded_dates or [])
 
     if not start_date_str or week_count < 1:
         return result
 
+    # Build lookup for excluded dates and their replacements
+    # Handle both old format (list of strings) and new format (list of objects)
+    excluded_map = {}
+    for item in (excluded_dates or []):
+        if isinstance(item, str):
+            # Old format: just a date string, no replacement
+            excluded_map[item] = None
+        elif isinstance(item, dict) and 'date' in item:
+            # New format: object with date and replacement
+            excluded_map[item['date']] = item.get('replacement')
+
     start_date = datetime.strptime(start_date_str, '%Y-%m-%d')
     current_date = start_date
 
-    while len(result) < week_count:
+    # Iterate through exactly week_count weeks
+    for _ in range(week_count):
         date_str = current_date.strftime('%Y-%m-%d')
 
-        if date_str not in excluded_set:
+        if date_str in excluded_map:
+            # This date is excluded
+            replacement = excluded_map[date_str]
+            if replacement:
+                # Use replacement date instead
+                result.append(replacement)
+            # If no replacement, skip this week entirely (don't add to result)
+        else:
             result.append(date_str)
 
         # Move to next week

@@ -634,6 +634,57 @@ body {
     border-color: #ffc107;
 }
 
+/* Replacement Date Input Styles */
+.replacement-date-input {
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.replacement-date-input:focus {
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 0.2rem rgba(6, 147, 227, 0.25);
+    outline: none;
+}
+
+.replacement-date-input:disabled {
+    background-color: #e9ecef;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.replacement-date-input.is-invalid {
+    border-color: #dc3545;
+}
+
+.replacement-date-input.is-invalid:focus {
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+}
+
+.replacement-error {
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+
+/* Replacement row indicator in Week Venue modal */
+.replacement-row {
+    background-color: rgba(255, 193, 7, 0.1) !important;
+}
+
+.replacement-indicator {
+    color: #856404;
+    font-weight: 500;
+}
+
+.replacement-indicator::before {
+    content: "\f4c4";
+    font-family: "bootstrap-icons";
+    margin-right: 0.3rem;
+    font-size: 0.85rem;
+}
+
 /* ===== V4: Week Venue and Lecturer Details Styling ===== */
 
 .week-venue-wrapper {
