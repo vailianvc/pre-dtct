@@ -139,7 +139,7 @@ function loadGlossaryData(glossaryType, elementId) {
 
 function generateDateOptions() {
     const startDate = new Date('2026-02-09');
-    const endDate = new Date('2026-02-13');
+    const endDate = new Date('2026-02-20');
     const select = $('#class_commencement');
 
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
