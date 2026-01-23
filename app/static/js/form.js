@@ -148,15 +148,20 @@ function generateDateOptions() {
     let currentDate = new Date(startDate);
 
     while (currentDate <= endDate) {
-        const dayName = dayNames[currentDate.getDay()];
-        const day = currentDate.getDate();
-        const month = monthNames[currentDate.getMonth()];
-        const year = currentDate.getFullYear();
+        const dayOfWeek = currentDate.getDay();
 
-        const displayText = `${dayName}, ${day} ${month} ${year}`;
-        const value = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+        // Skip Saturday (6) and Sunday (0)
+        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+            const dayName = dayNames[dayOfWeek];
+            const day = currentDate.getDate();
+            const month = monthNames[currentDate.getMonth()];
+            const year = currentDate.getFullYear();
 
-        select.append(new Option(displayText, value, false, false));
+            const displayText = `${dayName}, ${day} ${month} ${year}`;
+            const value = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+
+            select.append(new Option(displayText, value, false, false));
+        }
 
         // Move to next day
         currentDate.setDate(currentDate.getDate() + 1);
