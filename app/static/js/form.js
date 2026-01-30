@@ -150,8 +150,8 @@ function generateDateOptions() {
     while (currentDate <= endDate) {
         const dayOfWeek = currentDate.getDay();
 
-        // Skip Saturday (6) and Sunday (0)
-        if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+        // Skip Sunday (0) only - Saturday (6) is allowed
+        if (dayOfWeek !== 0) {
             const dayName = dayNames[dayOfWeek];
             const day = currentDate.getDate();
             const month = monthNames[currentDate.getMonth()];
