@@ -1189,6 +1189,11 @@ function populateWeekVenueTable(dates) {
                     </select>
                 </td>
                 <td>
+                    <select class="form-select week-faculty2-select" data-date="${dateObj.date}">
+                        <option value="">None (Optional)</option>
+                    </select>
+                </td>
+                <td>
                     <select class="form-select week-special-room-select" data-date="${dateObj.date}">
                         <option value="">None (Optional)</option>
                     </select>
@@ -1229,6 +1234,33 @@ function populateWeekSelectOptions(dates) {
             $('.week-faculty-select').select2({
                 theme: 'bootstrap-5',
                 placeholder: 'Select Faculty',
+                allowClear: true,
+                width: '100%',
+                dropdownParent: $('#weekVenueModal')
+            });
+
+            // Populate Faculty Code 2 (Sparring) selects with same data
+            $('.week-faculty2-select').each(function() {
+                const select = $(this);
+                const dateKey = select.data('date');
+                select.find('option:not(:first)').remove();
+                data.forEach(item => {
+                    const optionText = item.description
+                        ? `${item.code} - ${item.description}`
+                        : item.code;
+                    select.append(new Option(optionText, item.code));
+                });
+                // Set existing value if available
+                const existingDetail = weekVenueDetails[dateKey];
+                if (existingDetail && existingDetail.faculty_code2) {
+                    select.val(existingDetail.faculty_code2);
+                }
+            });
+
+            // Initialize Select2 on faculty2 selects after populating
+            $('.week-faculty2-select').select2({
+                theme: 'bootstrap-5',
+                placeholder: 'None (Optional)',
                 allowClear: true,
                 width: '100%',
                 dropdownParent: $('#weekVenueModal')
@@ -1293,6 +1325,25 @@ function populateApplyAllDropdowns() {
                 width: '100%',
                 dropdownParent: $('#weekVenueModal')
             });
+
+            // Also populate Faculty Code 2 dropdown
+            const select2 = $('#applyAllFaculty2');
+            select2.find('option:not(:first)').remove();
+            data.forEach(item => {
+                const optionText = item.description
+                    ? `${item.code} - ${item.description}`
+                    : item.code;
+                select2.append(new Option(optionText, item.code));
+            });
+
+            // Initialize Select2 for Faculty Code 2
+            select2.select2({
+                theme: 'bootstrap-5',
+                placeholder: 'None (Optional)',
+                allowClear: true,
+                width: '100%',
+                dropdownParent: $('#weekVenueModal')
+            });
         }
     });
 
@@ -1324,11 +1375,14 @@ function populateApplyAllDropdowns() {
 
 function applyToAllWeeks() {
     const facultyVal = $('#applyAllFaculty').val();
+    const faculty2Val = $('#applyAllFaculty2').val();
     const specialRoomVal = $('#applyAllSpecialRoom').val();
 
     if (facultyVal) {
         $('.week-faculty-select').val(facultyVal).trigger('change');
     }
+    // Always apply faculty2 (even if empty - user may want to clear all)
+    $('.week-faculty2-select').val(faculty2Val).trigger('change');
     // Always apply special room (even if empty - user may want to clear all)
     $('.week-special-room-select').val(specialRoomVal).trigger('change');
 }
@@ -1353,11 +1407,15 @@ function saveWeekVenueDetails() {
             select2Container.removeClass('select2-invalid');
         }
 
+        const faculty2Select = $(`.week-faculty2-select[data-date="${dateKey}"]`);
+        const faculty2Value = faculty2Select.val() || '';
+
         const specialRoomSelect = $(`.week-special-room-select[data-date="${dateKey}"]`);
         const specialRoomValue = specialRoomSelect.val() || '';
 
         newDetails[dateKey] = {
             faculty_code: facultyValue,
+            faculty_code2: faculty2Value,
             special_room_code: specialRoomValue
         };
     });

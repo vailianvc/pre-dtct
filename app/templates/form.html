@@ -267,13 +267,19 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-5">
+                            <div class="col-md-4">
                                 <label class="form-label">Faculty Code</label>
                                 <select class="form-select" id="applyAllFaculty">
                                     <option value="">Select Faculty</option>
                                 </select>
                             </div>
-                            <div class="col-md-5">
+                            <div class="col-md-3">
+                                <label class="form-label">Faculty Code 2 (Sparring)</label>
+                                <select class="form-select" id="applyAllFaculty2">
+                                    <option value="">None (Optional)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
                                 <label class="form-label">Special Room Code</label>
                                 <select class="form-select" id="applyAllSpecialRoom">
                                     <option value="">None (Optional)</option>
@@ -293,10 +299,11 @@
                     <table class="table table-bordered" id="weekVenueTable">
                         <thead class="table-light">
                             <tr>
-                                <th width="10%">Week</th>
-                                <th width="25%">Date</th>
-                                <th width="35%">Faculty Code <span class="text-danger">*</span></th>
-                                <th width="30%">Special Room Code</th>
+                                <th width="8%">Week</th>
+                                <th width="20%">Date</th>
+                                <th width="27%">Faculty Code <span class="text-danger">*</span></th>
+                                <th width="22%">Faculty Code 2 (Sparring)</th>
+                                <th width="23%">Special Room Code</th>
                             </tr>
                         </thead>
                         <tbody id="weekVenueTableBody">

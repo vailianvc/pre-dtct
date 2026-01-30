@@ -139,6 +139,7 @@ def expand_rows(form_data):
         # V4: Get week-specific faculty and special room
         week_detail = week_venue_details.get(date_str, {})
         faculty_code = week_detail.get('faculty_code', '')
+        faculty_code2 = week_detail.get('faculty_code2', '')  # V4.1: Sparring partner
         special_room_code = week_detail.get('special_room_code', '')
 
         row = {
@@ -154,6 +155,7 @@ def expand_rows(form_data):
             'course_name': course_name_map.get(course, ''),
             'group_code': group,
             'faculty_code': faculty_code,  # V4: Per-week faculty
+            'faculty_code2': faculty_code2,  # V4.1: Sparring partner
             'request_special_room_code': special_room_code,  # V4: Per-week special room
             'recurring_until_week': int(form_data['recurring_until_week']),
             'course_group_seq': course_group_map[(course, group)]  # Sequential number for CourseGroupID
