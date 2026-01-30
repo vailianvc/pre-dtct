@@ -14,6 +14,9 @@ let excludedDates = [];
 let weekVenueDetails = {}; // { "2026-01-01": { faculty_code: "FAC001", special_room_code: "" }, ... }
 let weekDetailsConfigured = false; // Tracks whether week details have been set
 
+// V4.1: Global cache for academic session commencement weeks
+let academicSessionData = {}; // { "EXMS-2026-268": { week1: "09.02.2026", week2: "16.02.2026" }, ... }
+
 $(document).ready(function() {
     // Initialize Select2 for all dropdowns
     initializeSelect2();
@@ -21,11 +24,11 @@ $(document).ready(function() {
     // Load glossary data for all dropdowns
     loadGlossaries();
 
-    // Generate date options for Class Commencement
-    generateDateOptions();
-
     // Handle form submission (Add Entry)
     $('#dtctForm').on('submit', handleAddEntry);
+
+    // V4.1: Handle Academic Session change to update Class Commencement options
+    $('#academic_session_code').on('change', updateClassCommencementOptions);
 
     // Handle Clear Form button
     $('#clearFormBtn').on('click', clearForm);
@@ -125,6 +128,14 @@ function loadGlossaryData(glossaryType, elementId) {
                     : item.code;
 
                 select.append(new Option(optionText, item.code, false, false));
+
+                // V4.1: Cache academic session commencement weeks
+                if (glossaryType === 'academicsession') {
+                    academicSessionData[item.code] = {
+                        week1: item.commencement_week_1 || '',
+                        week2: item.commencement_week_2 || ''
+                    };
+                }
             });
 
             // Refresh Select2
@@ -137,35 +148,86 @@ function loadGlossaryData(glossaryType, elementId) {
     });
 }
 
-function generateDateOptions() {
-    const startDate = new Date('2026-02-09');
-    const endDate = new Date('2026-02-20');
+function updateClassCommencementOptions() {
+    /**
+     * V4.1: Dynamically populate Class Commencement dropdown based on selected Academic Session.
+     * Generates dates from Commencement Week 1 (+6 days) and Commencement Week 2 (+6 days).
+     * Skips Sundays only (Saturday is allowed).
+     */
+    const selectedCode = $('#academic_session_code').val();
     const select = $('#class_commencement');
+
+    // Clear existing options except placeholder
+    select.find('option:not(:first)').remove();
+
+    // Reset dependent fields when academic session changes
+    excludedDates = [];
+    weekVenueDetails = {};
+    weekDetailsConfigured = false;
+    updateExcludeDatesButtonState();
+    updateWeekVenueButtonState();
+
+    if (!selectedCode || !academicSessionData[selectedCode]) {
+        select.trigger('change');
+        return;
+    }
+
+    const sessionData = academicSessionData[selectedCode];
+    const week1 = sessionData.week1;
+    const week2 = sessionData.week2;
 
     const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-    let currentDate = new Date(startDate);
+    /**
+     * Parse DD.MM.YYYY date string and generate 7 days of options (skipping Sundays)
+     */
+    function addWeekOptions(dateStr) {
+        if (!dateStr) return;
 
-    while (currentDate <= endDate) {
-        const dayOfWeek = currentDate.getDay();
+        // Parse DD.MM.YYYY format manually to avoid timezone issues
+        const parts = dateStr.split('.');
+        if (parts.length !== 3) return;
 
-        // Skip Sunday (0) only - Saturday (6) is allowed
-        if (dayOfWeek !== 0) {
-            const dayName = dayNames[dayOfWeek];
-            const day = currentDate.getDate();
-            const month = monthNames[currentDate.getMonth()];
-            const year = currentDate.getFullYear();
+        const day = parseInt(parts[0], 10);
+        const month = parseInt(parts[1], 10) - 1; // month is 0-indexed
+        const year = parseInt(parts[2], 10);
 
-            const displayText = `${dayName}, ${day} ${month} ${year}`;
-            const value = currentDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+        let currentDate = new Date(year, month, day);
 
-            select.append(new Option(displayText, value, false, false));
+        // Generate 7 days (start date + 6 days)
+        for (let i = 0; i < 7; i++) {
+            const dayOfWeek = currentDate.getDay();
+
+            // Skip Sunday (0) only - Saturday (6) is allowed
+            if (dayOfWeek !== 0) {
+                const dayName = dayNames[dayOfWeek];
+                const d = currentDate.getDate();
+                const m = monthNames[currentDate.getMonth()];
+                const y = currentDate.getFullYear();
+
+                const displayText = `${dayName}, ${d} ${m} ${y}`;
+
+                // Format value as YYYY-MM-DD using local date methods
+                const valueYear = currentDate.getFullYear();
+                const valueMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+                const valueDay = String(currentDate.getDate()).padStart(2, '0');
+                const value = `${valueYear}-${valueMonth}-${valueDay}`;
+
+                select.append(new Option(displayText, value, false, false));
+            }
+
+            // Move to next day
+            currentDate.setDate(currentDate.getDate() + 1);
         }
-
-        // Move to next day
-        currentDate.setDate(currentDate.getDate() + 1);
     }
+
+    // Add options from both weeks
+    addWeekOptions(week1);
+    addWeekOptions(week2);
+
+    // Refresh Select2
+    select.trigger('change');
 }
 
 function handleAddEntry(e) {

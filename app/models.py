@@ -8,16 +8,22 @@ class GlossaryCache(db.Model):
     glossary_type = db.Column(db.String(50), nullable=False)
     code = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(500))
+    commencement_week_1 = db.Column(db.String(20))  # DD.MM.YYYY format
+    commencement_week_2 = db.Column(db.String(20))  # DD.MM.YYYY format
 
     __table_args__ = (
         db.UniqueConstraint('glossary_type', 'code', name='unique_glossary_code'),
     )
 
     def to_dict(self):
-        return {
+        result = {
             'code': self.code,
             'description': self.description or ''
         }
+        if self.glossary_type == 'academicsession':
+            result['commencement_week_1'] = self.commencement_week_1 or ''
+            result['commencement_week_2'] = self.commencement_week_2 or ''
+        return result
 
 class FormSubmission(db.Model):
     __tablename__ = 'form_submissions'

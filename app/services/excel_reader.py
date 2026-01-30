@@ -13,6 +13,7 @@ def load_glossary(file_path, glossary_type):
 
     Returns:
         List of dicts with 'code' and 'description' keys
+        For academicsession type, also includes 'commencement_week_1' and 'commencement_week_2'
     """
     try:
         wb = load_workbook(file_path, read_only=True)
@@ -27,12 +28,26 @@ def load_glossary(file_path, glossary_type):
             if glossary_type == 'activity':
                 code = str(row[1]).strip() if len(row) > 1 and row[1] else ''
                 description = str(row[0]).strip() if row[0] else ''
+                item = {'code': code, 'description': description}
+            elif glossary_type == 'academicsession':
+                # Academic session has additional columns: Commencement Week 1 (col 2), Week 2 (col 3)
+                code = str(row[0]).strip() if row[0] else ''
+                description = str(row[1]).strip() if len(row) > 1 and row[1] else ''
+                week1 = str(row[2]).strip() if len(row) > 2 and row[2] else ''
+                week2 = str(row[3]).strip() if len(row) > 3 and row[3] else ''
+                item = {
+                    'code': code,
+                    'description': description,
+                    'commencement_week_1': week1,
+                    'commencement_week_2': week2
+                }
             else:
                 code = str(row[0]).strip() if row[0] else ''
                 description = str(row[1]).strip() if len(row) > 1 and row[1] else ''
+                item = {'code': code, 'description': description}
 
             if code:
-                data.append({'code': code, 'description': description})
+                data.append(item)
 
         wb.close()
         return data
@@ -80,7 +95,9 @@ def load_all_glossaries(app):
                 entry = GlossaryCache(
                     glossary_type=glossary_type,
                     code=item['code'],
-                    description=item['description']
+                    description=item['description'],
+                    commencement_week_1=item.get('commencement_week_1'),
+                    commencement_week_2=item.get('commencement_week_2')
                 )
                 db.session.add(entry)
                 inserted_count += 1
