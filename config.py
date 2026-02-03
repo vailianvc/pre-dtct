@@ -5,11 +5,18 @@ BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # Paths
 GLOSSARY_DIR = os.path.join(BASE_DIR, 'data', 'glossary')
-OUTPUT_DIR = os.path.join(BASE_DIR, 'output')
-DATABASE_PATH = os.path.join(BASE_DIR, 'data', 'dtct.db')
+OUTPUT_DIR = os.environ.get('OUTPUT_DIR') or os.path.join(BASE_DIR, 'output')
 
 # Database URI
-SQLALCHEMY_DATABASE_URI = f'sqlite:///{DATABASE_PATH}'
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    # Railway provides postgres:// but SQLAlchemy requires postgresql://
+    if DATABASE_URL.startswith('postgres://'):
+        DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+    SQLALCHEMY_DATABASE_URI = DATABASE_URL
+else:
+    DATABASE_PATH = os.path.join(BASE_DIR, 'data', 'dtct.db')
+    SQLALCHEMY_DATABASE_URI = f'sqlite:///{DATABASE_PATH}'
 SQLALCHEMY_TRACK_MODIFICATIONS = False
 
 # Flask settings
