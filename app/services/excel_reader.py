@@ -65,12 +65,6 @@ def load_all_glossaries(app):
     glossary_dir = app.config['GLOSSARY_DIR']
     glossary_files = app.config['GLOSSARY_FILES']
 
-    # Check if cache is already populated
-    existing_count = GlossaryCache.query.count()
-    if existing_count > 0:
-        print(f"Glossary cache already populated with {existing_count} entries")
-        return
-
     print("Loading glossary files into database cache...")
 
     for glossary_type, filename in glossary_files.items():
@@ -82,27 +76,23 @@ def load_all_glossaries(app):
 
         data = load_glossary(file_path, glossary_type)
 
-        # Insert into database (skip duplicates)
-        inserted_count = 0
+        # Clear existing entries for this glossary type before reloading
+        deleted_count = GlossaryCache.query.filter_by(glossary_type=glossary_type).delete()
+        if deleted_count > 0:
+            print(f"Cleared {deleted_count} existing entries for {glossary_type}")
+
+        # Insert fresh data from Excel file
         for item in data:
-            # Check if entry already exists
-            existing = GlossaryCache.query.filter_by(
+            entry = GlossaryCache(
                 glossary_type=glossary_type,
-                code=item['code']
-            ).first()
+                code=item['code'],
+                description=item['description'],
+                commencement_week_1=item.get('commencement_week_1'),
+                commencement_week_2=item.get('commencement_week_2')
+            )
+            db.session.add(entry)
 
-            if not existing:
-                entry = GlossaryCache(
-                    glossary_type=glossary_type,
-                    code=item['code'],
-                    description=item['description'],
-                    commencement_week_1=item.get('commencement_week_1'),
-                    commencement_week_2=item.get('commencement_week_2')
-                )
-                db.session.add(entry)
-                inserted_count += 1
-
-        print(f"Loaded {inserted_count} entries for {glossary_type} ({len(data)} total in file)")
+        print(f"Loaded {len(data)} entries for {glossary_type}")
 
     try:
         db.session.commit()
