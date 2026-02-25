@@ -164,13 +164,18 @@ def expand_rows(form_data):
             venues = session.get('venues', [{}])
             num_venues = len(venues)
 
-            for venue in venues:
+            for v_idx, venue in enumerate(venues):
                 faculty_code = venue.get('faculty_code', '')
                 faculty_code2 = venue.get('faculty_code2', '')
                 special_room_code = venue.get('special_room_code', '')
 
-                # TotalCapacity split across venues within a session (rounded up)
-                split_total = math.ceil(total_capacity / num_venues) if num_venues > 1 else total_capacity
+                # TotalCapacity split across venues: first `remainder` venues get one extra
+                if num_venues > 1:
+                    base = total_capacity // num_venues
+                    remainder = total_capacity % num_venues
+                    split_total = base + 1 if v_idx < remainder else base
+                else:
+                    split_total = total_capacity
 
                 row = {
                     'academic_session_code': form_data['academic_session_code'],
