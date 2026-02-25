@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from app import db
 
@@ -55,3 +56,23 @@ class GeneratedRow(db.Model):
     faculty_code = db.Column(db.String(50))
     request_special_room_code = db.Column(db.String(50))
     recurring_until_week = db.Column(db.Integer)
+
+class SavedSession(db.Model):
+    __tablename__ = 'saved_sessions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200), nullable=False, unique=True)
+    entries_json = db.Column(db.Text, nullable=False)
+    entry_counter = db.Column(db.Integer, nullable=False, default=1)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'entry_counter': self.entry_counter,
+            'entry_count': len(json.loads(self.entries_json)),
+            'created_at': self.created_at.strftime('%Y-%m-%d %H:%M'),
+            'updated_at': self.updated_at.strftime('%Y-%m-%d %H:%M')
+        }

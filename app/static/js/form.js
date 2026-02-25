@@ -57,6 +57,11 @@ $(document).ready(function() {
     $('#saveWeekVenueBtn').on('click', saveWeekVenueDetails);
     $('#applyToAllWeeksBtn').on('click', applyToAllWeeks);
 
+    // Session save/load handlers
+    $('#saveSessionBtn').on('click', openSaveSessionModal);
+    $('#confirmSaveSessionBtn').on('click', saveSession);
+    $('#loadSessionBtnForm').on('click', openLoadSessionModal);
+
     // V4: Trigger updates when relevant fields change
     $('#class_commencement').on('change', function() {
         updateExcludeDatesButtonState();
@@ -1519,4 +1524,188 @@ function updateWeekVenueStatusDisplay() {
     const weekCount = Object.keys(weekVenueDetails).length;
     $('#weekVenueCountDisplay').text(weekCount);
     $('#weekVenueStatusDisplay').removeClass('d-none');
+}
+
+// ===== Session Save/Load Functions =====
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(text));
+    return div.innerHTML;
+}
+
+function openSaveSessionModal() {
+    $('#sessionNameInput').val('');
+    $('#saveSessionBtnText').text('Save Session');
+    $('#saveSessionSpinner').addClass('d-none');
+    $('#confirmSaveSessionBtn').prop('disabled', false);
+    const modal = new bootstrap.Modal(document.getElementById('saveSessionModal'));
+    modal.show();
+    setTimeout(() => $('#sessionNameInput').focus(), 300);
+}
+
+function saveSession() {
+    const name = $('#sessionNameInput').val().trim();
+    if (!name) {
+        $('#sessionNameInput').addClass('is-invalid');
+        $('#sessionNameInput').focus();
+        return;
+    }
+    $('#sessionNameInput').removeClass('is-invalid');
+
+    if (entries.length === 0) {
+        alert('No entries to save. Please add at least one entry first.');
+        return;
+    }
+
+    $('#confirmSaveSessionBtn').prop('disabled', true);
+    $('#saveSessionBtnText').text('Saving...');
+    $('#saveSessionSpinner').removeClass('d-none');
+
+    $.ajax({
+        url: '/api/sessions',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            name: name,
+            entries: entries,
+            entry_counter: entryCounter
+        }),
+        success: function(response) {
+            bootstrap.Modal.getInstance(document.getElementById('saveSessionModal')).hide();
+            const msg = response.overwritten
+                ? `Session "<strong>${escapeHtml(name)}</strong>" updated successfully.`
+                : `Session "<strong>${escapeHtml(name)}</strong>" saved successfully.`;
+            showSuccess(msg);
+            setTimeout(() => $('#resultMessage').addClass('d-none'), 3000);
+        },
+        error: function(xhr) {
+            const errMsg = xhr.responseJSON ? xhr.responseJSON.error : 'Failed to save session';
+            alert('Error: ' + errMsg);
+        },
+        complete: function() {
+            $('#confirmSaveSessionBtn').prop('disabled', false);
+            $('#saveSessionBtnText').text('Save Session');
+            $('#saveSessionSpinner').addClass('d-none');
+        }
+    });
+}
+
+function openLoadSessionModal() {
+    $('#sessionListLoading').removeClass('d-none');
+    $('#sessionListContainer').addClass('d-none');
+    $('#sessionListEmpty').addClass('d-none');
+
+    const modal = new bootstrap.Modal(document.getElementById('loadSessionModal'));
+    modal.show();
+
+    $.ajax({
+        url: '/api/sessions',
+        method: 'GET',
+        success: function(sessions) {
+            $('#sessionListLoading').addClass('d-none');
+            if (sessions.length === 0) {
+                $('#sessionListEmpty').removeClass('d-none');
+            } else {
+                renderSessionList(sessions);
+                $('#sessionListContainer').removeClass('d-none');
+            }
+        },
+        error: function(xhr) {
+            $('#sessionListLoading').addClass('d-none');
+            const errMsg = xhr.responseJSON ? xhr.responseJSON.error : 'Failed to load sessions';
+            $('#sessionListContainer').html(
+                '<div class="alert alert-danger">' + escapeHtml(errMsg) + '</div>'
+            ).removeClass('d-none');
+        }
+    });
+}
+
+function renderSessionList(sessions) {
+    let html = '<div class="list-group">';
+    sessions.forEach(function(s) {
+        html += `
+            <div class="list-group-item session-list-item" data-session-id="${s.id}">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div class="session-info" style="cursor: pointer; flex: 1;" onclick="loadSession(${s.id}, '${escapeHtml(s.name).replace(/'/g, "\\'")}')">
+                        <h6 class="mb-1">${escapeHtml(s.name)}</h6>
+                        <small class="text-muted">
+                            ${s.entry_count} ${s.entry_count === 1 ? 'entry' : 'entries'}
+                            &middot; Updated ${escapeHtml(s.updated_at)}
+                        </small>
+                    </div>
+                    <button type="button" class="btn btn-outline-danger btn-sm ms-2" onclick="deleteSession(${s.id}, '${escapeHtml(s.name).replace(/'/g, "\\'")}')" title="Delete session">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>`;
+    });
+    html += '</div>';
+    $('#sessionListContainer').html(html);
+}
+
+function loadSession(id, name) {
+    if (entries.length > 0) {
+        if (!confirm('Loading a session will replace your current entries. Continue?')) {
+            return;
+        }
+    }
+
+    $.ajax({
+        url: '/api/sessions/' + id,
+        method: 'GET',
+        success: function(data) {
+            entries = data.entries;
+            entryCounter = data.entry_counter;
+            updateEntriesTable();
+
+            if (entries.length > 0) {
+                $('#entriesSection').removeClass('d-none');
+            } else {
+                $('#entriesSection').addClass('d-none');
+            }
+
+            bootstrap.Modal.getInstance(document.getElementById('loadSessionModal')).hide();
+            showSuccess('Session "<strong>' + escapeHtml(name) + '</strong>" loaded with ' + entries.length + ' entries.');
+            setTimeout(() => $('#resultMessage').addClass('d-none'), 3000);
+
+            if (entries.length > 0) {
+                $('html, body').animate({
+                    scrollTop: $('#entriesSection').offset().top - 50
+                }, 500);
+            }
+        },
+        error: function(xhr) {
+            const errMsg = xhr.responseJSON ? xhr.responseJSON.error : 'Failed to load session';
+            alert('Error: ' + errMsg);
+        }
+    });
+}
+
+function deleteSession(id, name) {
+    if (!confirm('Delete session "' + name + '"? This cannot be undone.')) {
+        return;
+    }
+
+    const $item = $(`.session-list-item[data-session-id="${id}"]`);
+    $item.css('opacity', '0.5');
+
+    $.ajax({
+        url: '/api/sessions/' + id,
+        method: 'DELETE',
+        success: function() {
+            $item.fadeOut(300, function() {
+                $(this).remove();
+                if ($('#sessionListContainer .session-list-item').length === 0) {
+                    $('#sessionListContainer').addClass('d-none');
+                    $('#sessionListEmpty').removeClass('d-none');
+                }
+            });
+        },
+        error: function(xhr) {
+            $item.css('opacity', '1');
+            const errMsg = xhr.responseJSON ? xhr.responseJSON.error : 'Failed to delete session';
+            alert('Error: ' + errMsg);
+        }
+    });
 }

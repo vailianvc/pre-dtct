@@ -845,3 +845,102 @@ body {
         margin-bottom: 0.75rem;
     }
 }
+
+/* ===== Session Save/Load Styling ===== */
+
+/* Entries header actions wrapper */
+.entries-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Save Session Modal */
+#saveSessionModal .modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+#saveSessionModal .modal-header {
+    background: var(--primary-color);
+    color: white;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    padding: 1.25rem 1.5rem;
+}
+
+#saveSessionModal .modal-body {
+    padding: 1.5rem;
+    color: #333;
+}
+
+#saveSessionModal .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+/* Load Session Modal */
+#loadSessionModal .modal-content {
+    border-radius: 12px;
+    border: none;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+}
+
+#loadSessionModal .modal-header {
+    background: var(--primary-color);
+    color: white;
+    border-top-left-radius: 12px;
+    border-top-right-radius: 12px;
+    padding: 1.25rem 1.5rem;
+}
+
+#loadSessionModal .modal-body {
+    padding: 1.5rem;
+    color: #333;
+}
+
+#loadSessionModal .btn-close {
+    filter: brightness(0) invert(1);
+}
+
+/* Session List Items */
+.session-list-item {
+    border: 1px solid #e9ecef;
+    border-radius: 8px !important;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+    padding: 1rem 1.25rem;
+}
+
+.session-list-item:hover {
+    background-color: #f0f4ff;
+    border-color: var(--secondary-color);
+}
+
+.session-list-item .session-info h6 {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.session-list-item .session-info:hover h6 {
+    color: var(--secondary-color);
+}
+
+/* Load Session form button */
+#loadSessionBtnForm {
+    border-radius: 9999px;
+}
+
+/* Responsive: stack entries header on small screens */
+@media (max-width: 768px) {
+    .entries-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .entries-header-actions {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+}

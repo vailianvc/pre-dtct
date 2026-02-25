@@ -1,4 +1,8 @@
+import json
+from datetime import datetime
 from flask import Blueprint, render_template, jsonify, request, send_file
+from app import db
+from app.models import SavedSession
 from app.services import excel_reader
 
 bp = Blueprint('main', __name__)
@@ -135,3 +139,84 @@ def download_file(filename):
         return send_file(file_path, as_attachment=True)
     else:
         return jsonify({'error': 'File not found'}), 404
+
+@bp.route('/api/sessions', methods=['POST'])
+def save_session():
+    """Save or overwrite a named session"""
+    try:
+        data = request.get_json()
+        name = (data.get('name') or '').strip()
+        entries = data.get('entries')
+        entry_counter = data.get('entry_counter', 1)
+
+        if not name:
+            return jsonify({'error': 'Session name is required'}), 400
+        if len(name) > 200:
+            return jsonify({'error': 'Session name must be 200 characters or fewer'}), 400
+        if not entries or not isinstance(entries, list) or len(entries) == 0:
+            return jsonify({'error': 'At least one entry is required'}), 400
+        if not isinstance(entry_counter, int) or entry_counter < 1:
+            return jsonify({'error': 'Invalid entry counter'}), 400
+
+        entries_json = json.dumps(entries)
+        existing = SavedSession.query.filter_by(name=name).first()
+        overwritten = False
+
+        if existing:
+            existing.entries_json = entries_json
+            existing.entry_counter = entry_counter
+            existing.updated_at = datetime.utcnow()
+            overwritten = True
+        else:
+            session = SavedSession(
+                name=name,
+                entries_json=entries_json,
+                entry_counter=entry_counter
+            )
+            db.session.add(session)
+
+        db.session.commit()
+        return jsonify({'success': True, 'overwritten': overwritten})
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/api/sessions', methods=['GET'])
+def list_sessions():
+    """List all saved sessions (summary only)"""
+    try:
+        sessions = SavedSession.query.order_by(SavedSession.updated_at.desc()).all()
+        return jsonify([s.to_dict() for s in sessions])
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/api/sessions/<int:session_id>', methods=['GET'])
+def get_session(session_id):
+    """Load a session with full entries data"""
+    try:
+        session = SavedSession.query.get(session_id)
+        if not session:
+            return jsonify({'error': 'Session not found'}), 404
+        return jsonify({
+            'id': session.id,
+            'name': session.name,
+            'entries': json.loads(session.entries_json),
+            'entry_counter': session.entry_counter
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@bp.route('/api/sessions/<int:session_id>', methods=['DELETE'])
+def delete_session(session_id):
+    """Delete a saved session"""
+    try:
+        session = SavedSession.query.get(session_id)
+        if not session:
+            return jsonify({'error': 'Session not found'}), 404
+        db.session.delete(session)
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': str(e)}), 500
