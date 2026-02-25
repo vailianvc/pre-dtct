@@ -1335,9 +1335,19 @@ function renderDateRows(date, dateObj, weekIndex) {
             let rowClasses = [baseRowClass];
             let actionsHtml = '';
 
+            // Show split capacity when session has multiple venues
+            let capacityHtml = '';
+            if (vIdx === 0 && venues.length > 1) {
+                const totalCapacity = calculateTotalCapacity(groupCapacities);
+                if (totalCapacity > 0) {
+                    const splitCapacity = Math.ceil(totalCapacity / venues.length);
+                    capacityHtml = `<br><small class="text-muted">Cap: ${splitCapacity} per venue</small>`;
+                }
+            }
+
             if (sIdx === 0 && vIdx === 0) {
                 // Primary row
-                weekCell = `<strong>Week ${weekIndex + 1}</strong>`;
+                weekCell = `<strong>Week ${weekIndex + 1}</strong>${capacityHtml}`;
                 dateCell = dateDisplay;
                 actionsHtml = `<div class="week-venue-actions">
                     <button type="button" class="btn-add-session" onclick="addSession('${date}')" title="Add session">+S</button>
@@ -1345,7 +1355,7 @@ function renderDateRows(date, dateObj, weekIndex) {
                 </div>`;
             } else if (sIdx > 0 && vIdx === 0) {
                 // Additional session primary venue
-                weekCell = `<span class="session-venue-label">Session ${sIdx + 1}</span>`;
+                weekCell = `<span class="session-venue-label">Session ${sIdx + 1}</span>${capacityHtml}`;
                 dateCell = '';
                 rowClasses.push('session-sub-row');
                 actionsHtml = `<div class="week-venue-actions">
@@ -1504,31 +1514,42 @@ function captureCurrentDateValues(date) {
     /**
      * Read current select values from the DOM for a given date and update
      * weekVenueDetails in-place, so that re-rendering preserves user edits.
+     * Builds the sessions structure on the fly from DOM rows, ensuring values
+     * are captured even when weekVenueDetails[date] doesn't exist yet.
      */
-    if (!weekVenueDetails[date] || !weekVenueDetails[date].sessions) return;
+    if (!weekVenueDetails[date]) {
+        weekVenueDetails[date] = { sessions: [] };
+    }
+    if (!weekVenueDetails[date].sessions) {
+        weekVenueDetails[date].sessions = [];
+    }
+
     $(`#weekVenueTableBody tr[data-date="${date}"]`).each(function() {
         const $row = $(this);
         const sIdx = parseInt($row.data('session'));
         const vIdx = parseInt($row.data('venue'));
         const sessions = weekVenueDetails[date].sessions;
-        if (sIdx < sessions.length && vIdx < sessions[sIdx].venues.length) {
-            sessions[sIdx].venues[vIdx] = {
-                faculty_code: $row.find('.week-faculty-select').val() || '',
-                faculty_code2: $row.find('.week-faculty2-select').val() || '',
-                special_room_code: $row.find('.week-special-room-select').val() || ''
-            };
+
+        // Grow arrays as needed
+        while (sessions.length <= sIdx) {
+            sessions.push({ venues: [] });
         }
+        while (sessions[sIdx].venues.length <= vIdx) {
+            sessions[sIdx].venues.push({});
+        }
+
+        sessions[sIdx].venues[vIdx] = {
+            faculty_code: $row.find('.week-faculty-select').val() || '',
+            faculty_code2: $row.find('.week-faculty2-select').val() || '',
+            special_room_code: $row.find('.week-special-room-select').val() || ''
+        };
     });
 }
 
 function addSession(date) {
-    // Capture current values before mutating
+    // Capture current values before mutating (also ensures structure exists)
     captureCurrentDateValues(date);
 
-    // Ensure the date has a proper structure in weekVenueDetails
-    if (!weekVenueDetails[date] || !weekVenueDetails[date].sessions) {
-        weekVenueDetails[date] = { sessions: [{ venues: [{ faculty_code: '', faculty_code2: '', special_room_code: '' }] }] };
-    }
     weekVenueDetails[date].sessions.push({
         venues: [{ faculty_code: '', faculty_code2: '', special_room_code: '' }]
     });
@@ -1553,11 +1574,9 @@ function removeSession(date, sessionIdx) {
 }
 
 function addVenue(date, sessionIdx) {
+    // Capture current values before mutating (also ensures structure exists)
     captureCurrentDateValues(date);
 
-    if (!weekVenueDetails[date] || !weekVenueDetails[date].sessions) {
-        weekVenueDetails[date] = { sessions: [{ venues: [{ faculty_code: '', faculty_code2: '', special_room_code: '' }] }] };
-    }
     const sessions = weekVenueDetails[date].sessions;
     if (sessionIdx >= sessions.length) return;
     sessions[sessionIdx].venues.push({ faculty_code: '', faculty_code2: '', special_room_code: '' });
