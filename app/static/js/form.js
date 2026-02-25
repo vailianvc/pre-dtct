@@ -1340,8 +1340,14 @@ function renderDateRows(date, dateObj, weekIndex) {
             if (vIdx === 0 && venues.length > 1) {
                 const totalCapacity = calculateTotalCapacity(groupCapacities);
                 if (totalCapacity > 0) {
-                    const splitCapacity = Math.ceil(totalCapacity / venues.length);
-                    capacityHtml = `<br><small class="text-muted">Cap: ${splitCapacity} per venue</small>`;
+                    const base = Math.floor(totalCapacity / venues.length);
+                    const remainder = totalCapacity % venues.length;
+                    // First `remainder` venues get base+1, the rest get base
+                    const parts = [];
+                    for (let i = 0; i < venues.length; i++) {
+                        parts.push(i < remainder ? base + 1 : base);
+                    }
+                    capacityHtml = `<br><small class="text-muted">Cap: ${parts.join(' + ')}</small>`;
                 }
             }
 
