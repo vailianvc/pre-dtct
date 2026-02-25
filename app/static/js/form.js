@@ -17,6 +17,9 @@ let weekDetailsConfigured = false; // Tracks whether week details have been set
 // V4.1: Global cache for academic session commencement weeks
 let academicSessionData = {}; // { "EXMS-2026-268": { week1: "09.02.2026", week2: "16.02.2026" }, ... }
 
+// Track which entry is being edited (null = adding new, index = editing existing)
+let editingEntryIndex = null;
+
 $(document).ready(function() {
     // Initialize Select2 for all dropdowns
     initializeSelect2();
@@ -250,11 +253,17 @@ function handleAddEntry(e) {
     // Collect form data
     const formData = collectFormData();
 
-    // Assign entry number
-    formData.entryNumber = entryCounter++;
-
-    // Add to entries array
-    entries.push(formData);
+    if (editingEntryIndex !== null) {
+        // Editing existing entry — preserve original entry number
+        formData.entryNumber = entries[editingEntryIndex].entryNumber;
+        entries[editingEntryIndex] = formData;
+        editingEntryIndex = null;
+        $('#addBtnText').text('Add Entry');
+    } else {
+        // Adding new entry
+        formData.entryNumber = entryCounter++;
+        entries.push(formData);
+    }
 
     // Update table
     updateEntriesTable();
@@ -377,6 +386,10 @@ function formatCourseInfo(codes, texts) {
 function editEntry(index) {
     const entry = entries[index];
 
+    // Track which entry is being edited
+    editingEntryIndex = index;
+    $('#addBtnText').text('Update Entry');
+
     // Populate form with entry data
     $('#academic_session_code').val(entry.academic_session_code).trigger('change');
     $('#programme_code').val(entry.programme_code).trigger('change');
@@ -405,19 +418,10 @@ function editEntry(index) {
         updateWeekVenueButtonState();
     }, 100);
 
-    // Remove the entry from list
-    entries.splice(index, 1);
-    updateEntriesTable();
-
     // Scroll to form
     $('html, body').animate({
         scrollTop: $('.form-container').offset().top - 100
     }, 500);
-
-    // Hide entries section if no entries
-    if (entries.length === 0) {
-        $('#entriesSection').addClass('d-none');
-    }
 }
 
 function deleteEntry(index) {
@@ -440,6 +444,10 @@ function copyEntry(index) {
 }
 
 function clearForm() {
+    // Reset editing state
+    editingEntryIndex = null;
+    $('#addBtnText').text('Add Entry');
+
     $('#dtctForm')[0].reset();
     $('.select2-single').val(null).trigger('change');
     $('.select2-multiple').val(null).trigger('change');
