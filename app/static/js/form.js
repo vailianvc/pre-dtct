@@ -20,6 +20,9 @@ let academicSessionData = {}; // { "EXMS-2026-268": { week1: "09.02.2026", week2
 // Track which entry is being edited (null = adding new, index = editing existing)
 let editingEntryIndex = null;
 
+// Cached session names for overwrite warning
+let existingSessionNames = [];
+
 $(document).ready(function() {
     // Initialize Select2 for all dropdowns
     initializeSelect2();
@@ -62,7 +65,14 @@ $(document).ready(function() {
 
     // Session save/load handlers
     $('#saveSessionBtn').on('click', openSaveSessionModal);
-    $('#confirmSaveSessionBtn').on('click', saveSession);
+    $('#confirmSaveSessionBtn').on('click', function() {
+        var isOverwrite = !$('#saveSessionOverwriteWarning').hasClass('d-none');
+        saveSession(isOverwrite);
+    });
+    $('#sessionNameInput').on('input', function() {
+        $('#saveSessionOverwriteWarning').addClass('d-none');
+        $('#confirmSaveSessionBtn').find('#saveSessionBtnText').text('Save Session');
+    });
     $('#loadSessionBtnForm').on('click', openLoadSessionModal);
 
     // V4: Trigger updates when relevant fields change
@@ -1547,12 +1557,23 @@ function openSaveSessionModal() {
     $('#saveSessionBtnText').text('Save Session');
     $('#saveSessionSpinner').addClass('d-none');
     $('#confirmSaveSessionBtn').prop('disabled', false);
+    $('#saveSessionOverwriteWarning').addClass('d-none');
+
+    // Fetch existing session names for overwrite warning
+    $.ajax({
+        url: '/api/sessions',
+        method: 'GET',
+        success: function(sessions) {
+            existingSessionNames = sessions.map(function(s) { return s.name; });
+        }
+    });
+
     const modal = new bootstrap.Modal(document.getElementById('saveSessionModal'));
     modal.show();
     setTimeout(() => $('#sessionNameInput').focus(), 300);
 }
 
-function saveSession() {
+function saveSession(confirmed) {
     const name = $('#sessionNameInput').val().trim();
     if (!name) {
         $('#sessionNameInput').addClass('is-invalid');
@@ -1566,6 +1587,14 @@ function saveSession() {
         return;
     }
 
+    // Warn if name matches an existing session (unless already confirmed)
+    if (!confirmed && existingSessionNames.some(function(n) { return n === name; })) {
+        $('#saveSessionOverwriteWarning').removeClass('d-none');
+        $('#confirmSaveSessionBtn').text('Overwrite');
+        return;
+    }
+
+    $('#saveSessionOverwriteWarning').addClass('d-none');
     $('#confirmSaveSessionBtn').prop('disabled', true);
     $('#saveSessionBtnText').text('Saving...');
     $('#saveSessionSpinner').removeClass('d-none');

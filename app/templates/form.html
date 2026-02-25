@@ -342,6 +342,9 @@
                     <label for="sessionNameInput" class="form-label">Session Name <span class="text-danger">*</span></label>
                     <input type="text" class="form-control" id="sessionNameInput" maxlength="200" placeholder="e.g. Semester 1 Timetable" required>
                 </div>
+                <div id="saveSessionOverwriteWarning" class="alert alert-warning d-none">
+                    <i class="bi bi-exclamation-triangle"></i> A session with this name already exists. Click <strong>Overwrite</strong> to replace it.
+                </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
