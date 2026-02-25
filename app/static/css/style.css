@@ -400,6 +400,15 @@ body {
     background: #bb2d3b;
 }
 
+.btn-copy {
+    background: #198754;
+    color: white;
+}
+
+.btn-copy:hover {
+    background: #157347;
+}
+
 /* Hide/Show utilities */
 .d-none {
     display: none !important;

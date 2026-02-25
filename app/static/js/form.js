@@ -338,6 +338,7 @@ function updateEntriesTable() {
                 <td><small>${excludedText}</small></td>
                 <td>
                     <button class="btn btn-action btn-edit me-1" onclick="editEntry(${index})">Edit</button>
+                    <button class="btn btn-action btn-copy me-1" onclick="copyEntry(${index})">Copy</button>
                     <button class="btn btn-action btn-delete" onclick="deleteEntry(${index})">Delete</button>
                 </td>
             </tr>
@@ -424,6 +425,13 @@ function deleteEntry(index) {
             $('#entriesSection').addClass('d-none');
         }
     }
+}
+
+function copyEntry(index) {
+    const copy = JSON.parse(JSON.stringify(entries[index]));
+    copy.entryNumber = entryCounter++;
+    entries.push(copy);
+    updateEntriesTable();
 }
 
 function clearForm() {
