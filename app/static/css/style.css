@@ -944,3 +944,69 @@ body {
         flex-wrap: wrap;
     }
 }
+
+/* ===== Multiple Sessions & Venues Styling ===== */
+
+/* Session sub-row: subtle top border to separate sessions within a week */
+.session-sub-row {
+    border-top: 2px solid #dee2e6 !important;
+}
+
+/* Venue sub-row: left padding indent to visually nest under parent */
+.venue-sub-row td:first-child {
+    padding-left: 1.5rem;
+}
+
+/* Session/Venue label in table */
+.session-venue-label {
+    font-size: 0.8rem;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+/* Small outline action buttons for +S, +V, -S, -V */
+.btn-add-session,
+.btn-add-venue {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--secondary-color);
+    color: var(--secondary-color);
+    background: transparent;
+    cursor: pointer;
+    line-height: 1.2;
+    transition: all 0.2s ease;
+}
+
+.btn-add-session:hover,
+.btn-add-venue:hover {
+    background: var(--secondary-color);
+    color: white;
+}
+
+.btn-remove-session,
+.btn-remove-venue {
+    font-size: 0.75rem;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid #dc3545;
+    color: #dc3545;
+    background: transparent;
+    cursor: pointer;
+    line-height: 1.2;
+    transition: all 0.2s ease;
+}
+
+.btn-remove-session:hover,
+.btn-remove-venue:hover {
+    background: #dc3545;
+    color: white;
+}
+
+/* Week venue actions cell */
+.week-venue-actions {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+    align-items: center;
+}

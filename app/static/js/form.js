@@ -323,7 +323,7 @@ function collectFormData() {
 
         // V4: New fields
         excluded_dates: [...excludedDates],
-        week_venue_details: { ...weekVenueDetails },
+        week_venue_details: JSON.parse(JSON.stringify(weekVenueDetails)),
         recurring_dates: recurringDates // Pre-calculated dates for backend
     };
 }
@@ -417,8 +417,8 @@ function editEntry(index) {
     // V4: Restore exclude dates
     excludedDates = [...(entry.excluded_dates || [])];
 
-    // V4: Restore week venue details
-    weekVenueDetails = { ...(entry.week_venue_details || {}) };
+    // V4: Restore week venue details (normalise old format)
+    weekVenueDetails = normaliseWeekVenueDetails(entry.week_venue_details || {});
     weekDetailsConfigured = Object.keys(weekVenueDetails).length > 0;
 
     // Trigger group change to update UI (after groups are set)
@@ -1258,141 +1258,347 @@ function openWeekVenueModal() {
     modal.show();
 }
 
+// Cached glossary data for re-rendering rows without re-fetching
+let _weekVenueFacultyData = null;
+let _weekVenueRoomData = null;
+let _weekVenueDates = []; // current dates array for re-rendering
+
+function normaliseWeekVenueDetails(details) {
+    /**
+     * Convert old flat format to new sessions/venues format.
+     * Old: { "2026-03-30": { faculty_code: "FAC001", ... } }
+     * New: { "2026-03-30": { sessions: [{ venues: [{ faculty_code: "FAC001", ... }] }] } }
+     */
+    const normalised = {};
+    for (const dateKey in details) {
+        const detail = details[dateKey];
+        if (detail && detail.sessions) {
+            normalised[dateKey] = JSON.parse(JSON.stringify(detail));
+        } else {
+            normalised[dateKey] = {
+                sessions: [{ venues: [Object.assign({}, detail)] }]
+            };
+        }
+    }
+    return normalised;
+}
+
 function populateWeekVenueTable(dates) {
+    _weekVenueDates = dates;
     const tableBody = $('#weekVenueTableBody');
     tableBody.empty();
 
-    dates.forEach((dateObj, index) => {
-        // Show replacement indicator if this is a replacement date
-        let dateDisplay = dateObj.displayDate;
-        let rowClass = '';
-        if (dateObj.isReplacement) {
-            dateDisplay = `<span class="replacement-indicator">${dateObj.displayDate}</span>
-                          <br><small class="text-muted">Replaces: ${formatDateForDisplay(dateObj.originalDate)}</small>`;
-            rowClass = 'replacement-row';
-        }
+    // Fetch glossary data then render all rows
+    const facultyPromise = $.ajax({ url: '/api/glossary/faculty', method: 'GET' });
+    const roomPromise = $.ajax({ url: '/api/glossary/specialroom', method: 'GET' });
 
-        const row = `
-            <tr data-date="${dateObj.date}" class="${rowClass}">
-                <td class="text-center"><strong>Week ${index + 1}</strong></td>
-                <td>${dateDisplay}</td>
-                <td>
-                    <select class="form-select week-faculty-select" data-date="${dateObj.date}">
-                        <option value="">Select Faculty</option>
-                    </select>
-                </td>
-                <td>
-                    <select class="form-select week-faculty2-select" data-date="${dateObj.date}">
-                        <option value="">None (Optional)</option>
-                    </select>
-                </td>
-                <td>
-                    <select class="form-select week-special-room-select" data-date="${dateObj.date}">
-                        <option value="">None (Optional)</option>
-                    </select>
-                </td>
-            </tr>
-        `;
-        tableBody.append(row);
+    $.when(facultyPromise, roomPromise).done(function(facResult, roomResult) {
+        _weekVenueFacultyData = facResult[0];
+        _weekVenueRoomData = roomResult[0];
+
+        dates.forEach((dateObj, index) => {
+            renderDateRows(dateObj.date, dateObj, index);
+        });
     });
-
-    // Populate the select options from glossary
-    populateWeekSelectOptions(dates);
 }
 
-function populateWeekSelectOptions(dates) {
-    // Fetch faculty data
-    $.ajax({
-        url: '/api/glossary/faculty',
-        method: 'GET',
-        success: function(data) {
-            $('.week-faculty-select').each(function() {
-                const select = $(this);
-                const dateKey = select.data('date');
-                select.find('option:not(:first)').remove();
-                data.forEach(item => {
-                    const optionText = item.description
-                        ? `${item.code} - ${item.description}`
-                        : item.code;
-                    select.append(new Option(optionText, item.code));
-                });
-                // Set existing value if available
-                const existingDetail = weekVenueDetails[dateKey];
-                if (existingDetail && existingDetail.faculty_code) {
-                    select.val(existingDetail.faculty_code);
-                }
-            });
+function renderDateRows(date, dateObj, weekIndex) {
+    const tableBody = $('#weekVenueTableBody');
 
-            // Initialize Select2 on faculty selects after populating
-            $('.week-faculty-select').select2({
-                theme: 'bootstrap-5',
-                placeholder: 'Select Faculty',
-                allowClear: true,
-                width: '100%',
-                dropdownParent: $('#weekVenueModal')
-            });
+    // Remove existing rows for this date
+    tableBody.find(`tr[data-date="${date}"]`).remove();
 
-            // Populate Faculty Code 2 (Sparring) selects with same data
-            $('.week-faculty2-select').each(function() {
-                const select = $(this);
-                const dateKey = select.data('date');
-                select.find('option:not(:first)').remove();
-                data.forEach(item => {
-                    const optionText = item.description
-                        ? `${item.code} - ${item.description}`
-                        : item.code;
-                    select.append(new Option(optionText, item.code));
-                });
-                // Set existing value if available
-                const existingDetail = weekVenueDetails[dateKey];
-                if (existingDetail && existingDetail.faculty_code2) {
-                    select.val(existingDetail.faculty_code2);
-                }
-            });
+    // Get or create sessions structure for this date
+    let dateDetail = weekVenueDetails[date];
+    if (!dateDetail || !dateDetail.sessions) {
+        dateDetail = { sessions: [{ venues: [{ faculty_code: '', faculty_code2: '', special_room_code: '' }] }] };
+    }
+    const sessions = dateDetail.sessions;
 
-            // Initialize Select2 on faculty2 selects after populating
-            $('.week-faculty2-select').select2({
-                theme: 'bootstrap-5',
-                placeholder: 'None (Optional)',
-                allowClear: true,
-                width: '100%',
-                dropdownParent: $('#weekVenueModal')
-            });
+    // Build date display
+    let dateDisplay = dateObj.displayDate;
+    let baseRowClass = '';
+    if (dateObj.isReplacement) {
+        dateDisplay = `<span class="replacement-indicator">${dateObj.displayDate}</span>
+                      <br><small class="text-muted">Replaces: ${formatDateForDisplay(dateObj.originalDate)}</small>`;
+        baseRowClass = 'replacement-row';
+    }
+
+    const rows = [];
+
+    sessions.forEach((session, sIdx) => {
+        const venues = session.venues || [{ faculty_code: '', faculty_code2: '', special_room_code: '' }];
+
+        venues.forEach((venue, vIdx) => {
+            let weekCell = '';
+            let dateCell = '';
+            let rowClasses = [baseRowClass];
+            let actionsHtml = '';
+
+            if (sIdx === 0 && vIdx === 0) {
+                // Primary row
+                weekCell = `<strong>Week ${weekIndex + 1}</strong>`;
+                dateCell = dateDisplay;
+                actionsHtml = `<div class="week-venue-actions">
+                    <button type="button" class="btn-add-session" onclick="addSession('${date}')" title="Add session">+S</button>
+                    <button type="button" class="btn-add-venue" onclick="addVenue('${date}', ${sIdx})" title="Add venue">+V</button>
+                </div>`;
+            } else if (sIdx > 0 && vIdx === 0) {
+                // Additional session primary venue
+                weekCell = `<span class="session-venue-label">Session ${sIdx + 1}</span>`;
+                dateCell = '';
+                rowClasses.push('session-sub-row');
+                actionsHtml = `<div class="week-venue-actions">
+                    <button type="button" class="btn-remove-session" onclick="removeSession('${date}', ${sIdx})" title="Remove session">&minus;S</button>
+                    <button type="button" class="btn-add-venue" onclick="addVenue('${date}', ${sIdx})" title="Add venue">+V</button>
+                </div>`;
+            } else {
+                // Additional venue row (any session)
+                weekCell = `<span class="session-venue-label">${sIdx > 0 ? 'S' + (sIdx + 1) + ' ' : ''}Venue ${vIdx + 1}</span>`;
+                dateCell = '';
+                rowClasses.push('venue-sub-row');
+                actionsHtml = `<div class="week-venue-actions">
+                    <button type="button" class="btn-remove-venue" onclick="removeVenue('${date}', ${sIdx}, ${vIdx})" title="Remove venue">&minus;V</button>
+                </div>`;
+            }
+
+            const rowHtml = `
+                <tr data-date="${date}" data-session="${sIdx}" data-venue="${vIdx}" class="${rowClasses.join(' ')}">
+                    <td class="text-center">${weekCell}</td>
+                    <td>${dateCell}</td>
+                    <td>
+                        <select class="form-select week-faculty-select" data-date="${date}" data-session="${sIdx}" data-venue="${vIdx}">
+                            <option value="">Select Faculty</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select week-faculty2-select" data-date="${date}" data-session="${sIdx}" data-venue="${vIdx}">
+                            <option value="">None (Optional)</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select class="form-select week-special-room-select" data-date="${date}" data-session="${sIdx}" data-venue="${vIdx}">
+                            <option value="">None (Optional)</option>
+                        </select>
+                    </td>
+                    <td>${actionsHtml}</td>
+                </tr>
+            `;
+            rows.push(rowHtml);
+        });
+    });
+
+    // Find the right insertion point (after any rows for previous dates)
+    const allDateRows = tableBody.find('tr');
+    let insertAfter = null;
+    allDateRows.each(function() {
+        const rowDate = $(this).data('date');
+        if (rowDate && rowDate < date) {
+            insertAfter = $(this);
         }
     });
 
-    // Fetch special room data
-    $.ajax({
-        url: '/api/glossary/specialroom',
-        method: 'GET',
-        success: function(data) {
-            $('.week-special-room-select').each(function() {
-                const select = $(this);
-                const dateKey = select.data('date');
-                select.find('option:not(:first)').remove();
-                data.forEach(item => {
-                    const optionText = item.description
-                        ? `${item.code} - ${item.description}`
-                        : item.code;
-                    select.append(new Option(optionText, item.code));
-                });
-                // Set existing value if available
-                const existingDetail = weekVenueDetails[dateKey];
-                if (existingDetail && existingDetail.special_room_code) {
-                    select.val(existingDetail.special_room_code);
-                }
-            });
+    if (insertAfter && insertAfter.length) {
+        // Find the last row belonging to insertAfter's date
+        let lastPrev = insertAfter;
+        insertAfter.nextAll(`tr[data-date="${insertAfter.data('date')}"]`).each(function() {
+            lastPrev = $(this);
+        });
+        lastPrev.after(rows.join(''));
+    } else if (allDateRows.length === 0) {
+        tableBody.append(rows.join(''));
+    } else {
+        // This date is before all existing dates, prepend
+        const existingDates = [];
+        allDateRows.each(function() {
+            const d = $(this).data('date');
+            if (d && !existingDates.includes(d)) existingDates.push(d);
+        });
+        if (existingDates.length > 0 && date < existingDates[0]) {
+            tableBody.prepend(rows.join(''));
+        } else {
+            tableBody.append(rows.join(''));
+        }
+    }
 
-            // Initialize Select2 on special room selects after populating
-            $('.week-special-room-select').select2({
-                theme: 'bootstrap-5',
-                placeholder: 'None (Optional)',
-                allowClear: true,
-                width: '100%',
-                dropdownParent: $('#weekVenueModal')
-            });
+    // Populate selects and init Select2 for the newly added rows
+    initSelectsForDate(date, sessions);
+}
+
+function initSelectsForDate(date, sessions) {
+    sessions.forEach((session, sIdx) => {
+        const venues = session.venues || [{}];
+        venues.forEach((venue, vIdx) => {
+            initSelectsForRow(date, sIdx, vIdx, venue);
+        });
+    });
+}
+
+function initSelectsForRow(date, sIdx, vIdx, existingVenue) {
+    const selector = `tr[data-date="${date}"][data-session="${sIdx}"][data-venue="${vIdx}"]`;
+    const $row = $(selector);
+    if (!$row.length) return;
+
+    const $faculty = $row.find('.week-faculty-select');
+    const $faculty2 = $row.find('.week-faculty2-select');
+    const $room = $row.find('.week-special-room-select');
+
+    // Populate faculty options
+    if (_weekVenueFacultyData) {
+        $faculty.find('option:not(:first)').remove();
+        $faculty2.find('option:not(:first)').remove();
+        _weekVenueFacultyData.forEach(item => {
+            const optionText = item.description ? `${item.code} - ${item.description}` : item.code;
+            $faculty.append(new Option(optionText, item.code));
+            $faculty2.append(new Option(optionText, item.code));
+        });
+        if (existingVenue && existingVenue.faculty_code) {
+            $faculty.val(existingVenue.faculty_code);
+        }
+        if (existingVenue && existingVenue.faculty_code2) {
+            $faculty2.val(existingVenue.faculty_code2);
+        }
+    }
+
+    // Populate room options
+    if (_weekVenueRoomData) {
+        $room.find('option:not(:first)').remove();
+        _weekVenueRoomData.forEach(item => {
+            const optionText = item.description ? `${item.code} - ${item.description}` : item.code;
+            $room.append(new Option(optionText, item.code));
+        });
+        if (existingVenue && existingVenue.special_room_code) {
+            $room.val(existingVenue.special_room_code);
+        }
+    }
+
+    // Destroy existing Select2 before re-initialising
+    if ($faculty.hasClass('select2-hidden-accessible')) $faculty.select2('destroy');
+    if ($faculty2.hasClass('select2-hidden-accessible')) $faculty2.select2('destroy');
+    if ($room.hasClass('select2-hidden-accessible')) $room.select2('destroy');
+
+    $faculty.select2({
+        theme: 'bootstrap-5',
+        placeholder: 'Select Faculty',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#weekVenueModal')
+    });
+    $faculty2.select2({
+        theme: 'bootstrap-5',
+        placeholder: 'None (Optional)',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#weekVenueModal')
+    });
+    $room.select2({
+        theme: 'bootstrap-5',
+        placeholder: 'None (Optional)',
+        allowClear: true,
+        width: '100%',
+        dropdownParent: $('#weekVenueModal')
+    });
+}
+
+function captureCurrentDateValues(date) {
+    /**
+     * Read current select values from the DOM for a given date and update
+     * weekVenueDetails in-place, so that re-rendering preserves user edits.
+     */
+    if (!weekVenueDetails[date] || !weekVenueDetails[date].sessions) return;
+    $(`#weekVenueTableBody tr[data-date="${date}"]`).each(function() {
+        const $row = $(this);
+        const sIdx = parseInt($row.data('session'));
+        const vIdx = parseInt($row.data('venue'));
+        const sessions = weekVenueDetails[date].sessions;
+        if (sIdx < sessions.length && vIdx < sessions[sIdx].venues.length) {
+            sessions[sIdx].venues[vIdx] = {
+                faculty_code: $row.find('.week-faculty-select').val() || '',
+                faculty_code2: $row.find('.week-faculty2-select').val() || '',
+                special_room_code: $row.find('.week-special-room-select').val() || ''
+            };
         }
     });
+}
+
+function addSession(date) {
+    // Capture current values before mutating
+    captureCurrentDateValues(date);
+
+    // Ensure the date has a proper structure in weekVenueDetails
+    if (!weekVenueDetails[date] || !weekVenueDetails[date].sessions) {
+        weekVenueDetails[date] = { sessions: [{ venues: [{ faculty_code: '', faculty_code2: '', special_room_code: '' }] }] };
+    }
+    weekVenueDetails[date].sessions.push({
+        venues: [{ faculty_code: '', faculty_code2: '', special_room_code: '' }]
+    });
+
+    const dateInfo = findDateInfo(date);
+    if (dateInfo) {
+        renderDateRows(date, dateInfo.dateObj, dateInfo.weekIndex);
+    }
+}
+
+function removeSession(date, sessionIdx) {
+    if (!weekVenueDetails[date] || !weekVenueDetails[date].sessions) return;
+    if (sessionIdx === 0) return; // Cannot remove session 0
+
+    captureCurrentDateValues(date);
+    weekVenueDetails[date].sessions.splice(sessionIdx, 1);
+
+    const dateInfo = findDateInfo(date);
+    if (dateInfo) {
+        renderDateRows(date, dateInfo.dateObj, dateInfo.weekIndex);
+    }
+}
+
+function addVenue(date, sessionIdx) {
+    captureCurrentDateValues(date);
+
+    if (!weekVenueDetails[date] || !weekVenueDetails[date].sessions) {
+        weekVenueDetails[date] = { sessions: [{ venues: [{ faculty_code: '', faculty_code2: '', special_room_code: '' }] }] };
+    }
+    const sessions = weekVenueDetails[date].sessions;
+    if (sessionIdx >= sessions.length) return;
+    sessions[sessionIdx].venues.push({ faculty_code: '', faculty_code2: '', special_room_code: '' });
+
+    const dateInfo = findDateInfo(date);
+    if (dateInfo) {
+        renderDateRows(date, dateInfo.dateObj, dateInfo.weekIndex);
+    }
+}
+
+function removeVenue(date, sessionIdx, venueIdx) {
+    if (!weekVenueDetails[date] || !weekVenueDetails[date].sessions) return;
+
+    captureCurrentDateValues(date);
+    const sessions = weekVenueDetails[date].sessions;
+    if (sessionIdx >= sessions.length) return;
+    const venues = sessions[sessionIdx].venues;
+
+    // Cannot remove the only venue of session 0 if it's the only session
+    if (venues.length <= 1 && sessionIdx === 0 && sessions.length === 1) return;
+
+    // If removing the only venue, remove the whole session instead (unless it's session 0)
+    if (venues.length <= 1 && sessionIdx > 0) {
+        sessions.splice(sessionIdx, 1);
+    } else {
+        venues.splice(venueIdx, 1);
+    }
+
+    const dateInfo = findDateInfo(date);
+    if (dateInfo) {
+        renderDateRows(date, dateInfo.dateObj, dateInfo.weekIndex);
+    }
+}
+
+function findDateInfo(date) {
+    for (let i = 0; i < _weekVenueDates.length; i++) {
+        if (_weekVenueDates[i].date === date) {
+            return { dateObj: _weekVenueDates[i], weekIndex: i };
+        }
+    }
+    return null;
 }
 
 function populateApplyAllDropdowns() {
@@ -1471,28 +1677,41 @@ function applyToAllWeeks() {
     const faculty2Val = $('#applyAllFaculty2').val();
     const specialRoomVal = $('#applyAllSpecialRoom').val();
 
+    // Only apply to primary venues (session 0, venue 0)
     if (facultyVal) {
-        $('.week-faculty-select').val(facultyVal).trigger('change');
+        $('select.week-faculty-select[data-session="0"][data-venue="0"]').val(facultyVal).trigger('change');
     }
-    // Always apply faculty2 (even if empty - user may want to clear all)
-    $('.week-faculty2-select').val(faculty2Val).trigger('change');
-    // Always apply special room (even if empty - user may want to clear all)
-    $('.week-special-room-select').val(specialRoomVal).trigger('change');
+    $('select.week-faculty2-select[data-session="0"][data-venue="0"]').val(faculty2Val).trigger('change');
+    $('select.week-special-room-select[data-session="0"][data-venue="0"]').val(specialRoomVal).trigger('change');
 }
 
 function saveWeekVenueDetails() {
-    // Validate that all faculty codes are set
+    // Build nested structure from all table rows
     let isValid = true;
     const newDetails = {};
 
-    $('.week-faculty-select').each(function() {
-        const select = $(this);
-        const dateKey = select.data('date');
-        const facultyValue = select.val();
+    $('#weekVenueTableBody tr').each(function() {
+        const $row = $(this);
+        const dateKey = $row.data('date');
+        const sIdx = parseInt($row.data('session'));
+        const vIdx = parseInt($row.data('venue'));
 
-        // Get the Select2 container for this select
-        const select2Container = select.next('.select2-container');
+        if (!dateKey && dateKey !== 0) return; // skip non-data rows
 
+        // Ensure date structure exists
+        if (!newDetails[dateKey]) {
+            newDetails[dateKey] = { sessions: [] };
+        }
+        // Ensure session array is long enough
+        while (newDetails[dateKey].sessions.length <= sIdx) {
+            newDetails[dateKey].sessions.push({ venues: [] });
+        }
+
+        const $faculty = $row.find('.week-faculty-select');
+        const facultyValue = $faculty.val();
+
+        // Validate faculty code is set
+        const select2Container = $faculty.next('.select2-container');
         if (!facultyValue) {
             isValid = false;
             select2Container.addClass('select2-invalid');
@@ -1500,13 +1719,15 @@ function saveWeekVenueDetails() {
             select2Container.removeClass('select2-invalid');
         }
 
-        const faculty2Select = $(`.week-faculty2-select[data-date="${dateKey}"]`);
-        const faculty2Value = faculty2Select.val() || '';
+        const faculty2Value = $row.find('.week-faculty2-select').val() || '';
+        const specialRoomValue = $row.find('.week-special-room-select').val() || '';
 
-        const specialRoomSelect = $(`.week-special-room-select[data-date="${dateKey}"]`);
-        const specialRoomValue = specialRoomSelect.val() || '';
+        // Ensure venue array is long enough
+        while (newDetails[dateKey].sessions[sIdx].venues.length <= vIdx) {
+            newDetails[dateKey].sessions[sIdx].venues.push({});
+        }
 
-        newDetails[dateKey] = {
+        newDetails[dateKey].sessions[sIdx].venues[vIdx] = {
             faculty_code: facultyValue,
             faculty_code2: faculty2Value,
             special_room_code: specialRoomValue
@@ -1514,7 +1735,7 @@ function saveWeekVenueDetails() {
     });
 
     if (!isValid) {
-        showError('Please select a Faculty Code for all weeks.');
+        showError('Please select a Faculty Code for all venues.');
         return;
     }
 
@@ -1693,6 +1914,12 @@ function loadSession(id, name) {
         method: 'GET',
         success: function(data) {
             entries = data.entries;
+            // Normalise week venue details in all loaded entries
+            entries.forEach(function(entry) {
+                if (entry.week_venue_details) {
+                    entry.week_venue_details = normaliseWeekVenueDetails(entry.week_venue_details);
+                }
+            });
             entryCounter = data.entry_counter;
             updateEntriesTable();
 

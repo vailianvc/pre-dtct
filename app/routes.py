@@ -73,10 +73,16 @@ def generate_multiple_excel():
             if not week_venue_details or len(week_venue_details) == 0:
                 return jsonify({'error': 'Week venue and lecturer details are required'}), 400
 
-            # V4: Validate each week has a faculty code
+            # Validate each week has a faculty code (supports both old and new format)
             for date_key, detail in week_venue_details.items():
-                if not detail.get('faculty_code'):
-                    return jsonify({'error': f'Faculty code missing for date: {date_key}'}), 400
+                if 'sessions' in detail:
+                    for session in detail['sessions']:
+                        for venue in session.get('venues', []):
+                            if not venue.get('faculty_code'):
+                                return jsonify({'error': f'Faculty code missing for date: {date_key}'}), 400
+                else:
+                    if not detail.get('faculty_code'):
+                        return jsonify({'error': f'Faculty code missing for date: {date_key}'}), 400
 
             # Validate group_capacities structure
             group_capacities = entry.get('group_capacities', {})

@@ -1,3 +1,4 @@
+import math
 from itertools import product
 from datetime import datetime, timedelta
 
@@ -62,10 +63,27 @@ def calculate_recurring_dates(start_date_str, week_count, excluded_dates):
     return result
 
 
+def normalise_week_venue_details(details):
+    """Convert old flat format to new sessions/venues format.
+
+    Old format: { "2026-03-30": { "faculty_code": "FAC001", ... } }
+    New format: { "2026-03-30": { "sessions": [{ "venues": [{ "faculty_code": "FAC001", ... }] }] } }
+    """
+    normalised = {}
+    for date_key, detail in details.items():
+        if 'sessions' in detail:
+            normalised[date_key] = detail
+        else:
+            normalised[date_key] = {
+                'sessions': [{'venues': [detail]}]
+            }
+    return normalised
+
+
 def expand_rows(form_data):
     """
-    Expand multi-select fields into separate rows using Cartesian product
-    V4: Now also expands by recurring weeks
+    Expand multi-select fields into separate rows using Cartesian product.
+    Expands by recurring weeks, sessions, and venues.
 
     Args:
         form_data: Dictionary containing form fields including multi-select arrays
@@ -99,11 +117,13 @@ def expand_rows(form_data):
         else:
             course_name_map[code] = ''
 
-    # V4: Get week venue details
-    week_venue_details = form_data.get('week_venue_details', {})
+    # Get week venue details and normalise to new format
+    week_venue_details = normalise_week_venue_details(
+        form_data.get('week_venue_details', {})
+    )
     excluded_dates = form_data.get('excluded_dates', [])
 
-    # V4: Calculate or use pre-calculated recurring dates
+    # Calculate or use pre-calculated recurring dates
     recurring_dates = form_data.get('recurring_dates', None)
     if not recurring_dates:
         start_date = form_data.get('class_commencement')
@@ -113,7 +133,7 @@ def expand_rows(form_data):
         # Extract just the date strings if full objects passed
         recurring_dates = [d['date'] if isinstance(d, dict) else d for d in recurring_dates]
 
-    # V4: Create Cartesian product of courses, groups, AND dates
+    # Create Cartesian product of courses, groups, AND dates
     combinations = list(product(courses, groups, recurring_dates))
 
     # Build rows with all combinations
@@ -136,31 +156,41 @@ def expand_rows(form_data):
         # Get capacity for this specific group
         group_capacity = group_capacities.get(group, 0)
 
-        # V4: Get week-specific faculty and special room
-        week_detail = week_venue_details.get(date_str, {})
-        faculty_code = week_detail.get('faculty_code', '')
-        faculty_code2 = week_detail.get('faculty_code2', '')  # V4.1: Sparring partner
-        special_room_code = week_detail.get('special_room_code', '')
+        # Get session/venue details for this date
+        date_detail = week_venue_details.get(date_str, {})
+        sessions = date_detail.get('sessions', [{'venues': [{}]}])
 
-        row = {
-            'academic_session_code': form_data['academic_session_code'],
-            'programme_code': form_data.get('programme_code', ''),  # V4: Now optional
-            'class_commencement': form_data['class_commencement'],  # Original first class date
-            'scheduled_date': date_str,  # V4: Per-week recurring date
-            'duration': int(form_data['duration']),
-            'activity_code': form_data['activity_code'],
-            'group_code_capacity': int(group_capacity),  # Capacity for this specific group
-            'total_capacity': int(total_capacity),  # Total capacity across all groups
-            'course_code': course,
-            'course_name': course_name_map.get(course, ''),
-            'group_code': group,
-            'faculty_code': faculty_code,  # V4: Per-week faculty
-            'faculty_code2': faculty_code2,  # V4.1: Sparring partner
-            'request_special_room_code': special_room_code,  # V4: Per-week special room
-            'recurring_until_week': int(form_data['recurring_until_week']),
-            'course_group_seq': course_group_map[(course, group)]  # Sequential number for CourseGroupID
-        }
-        rows.append(row)
+        for session in sessions:
+            venues = session.get('venues', [{}])
+            num_venues = len(venues)
+
+            for venue in venues:
+                faculty_code = venue.get('faculty_code', '')
+                faculty_code2 = venue.get('faculty_code2', '')
+                special_room_code = venue.get('special_room_code', '')
+
+                # TotalCapacity split across venues within a session (rounded up)
+                split_total = math.ceil(total_capacity / num_venues) if num_venues > 1 else total_capacity
+
+                row = {
+                    'academic_session_code': form_data['academic_session_code'],
+                    'programme_code': form_data.get('programme_code', ''),
+                    'class_commencement': form_data['class_commencement'],
+                    'scheduled_date': date_str,
+                    'duration': int(form_data['duration']),
+                    'activity_code': form_data['activity_code'],
+                    'group_code_capacity': int(group_capacity),
+                    'total_capacity': int(split_total),
+                    'course_code': course,
+                    'course_name': course_name_map.get(course, ''),
+                    'group_code': group,
+                    'faculty_code': faculty_code,
+                    'faculty_code2': faculty_code2,
+                    'request_special_room_code': special_room_code,
+                    'recurring_until_week': int(form_data['recurring_until_week']),
+                    'course_group_seq': course_group_map[(course, group)]
+                }
+                rows.append(row)
 
     return rows
 
