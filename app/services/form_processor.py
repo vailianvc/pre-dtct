@@ -77,6 +77,13 @@ def normalise_week_venue_details(details):
             normalised[date_key] = {
                 'sessions': [{'venues': [detail]}]
             }
+        # Migrate date-level start_time/end_time to session level
+        date_start = detail.get('start_time', '')
+        date_end = detail.get('end_time', '')
+        if date_start or date_end:
+            for session in normalised[date_key]['sessions']:
+                session.setdefault('start_time', date_start)
+                session.setdefault('end_time', date_end)
     return normalised
 
 
@@ -159,10 +166,10 @@ def expand_rows(form_data):
         # Get session/venue details for this date
         date_detail = week_venue_details.get(date_str, {})
         sessions = date_detail.get('sessions', [{'venues': [{}]}])
-        start_time = date_detail.get('start_time', '')
-        end_time = date_detail.get('end_time', '')
 
         for session in sessions:
+            start_time = session.get('start_time', '')
+            end_time = session.get('end_time', '')
             venues = session.get('venues', [{}])
             num_venues = len(venues)
 

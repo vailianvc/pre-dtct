@@ -1351,18 +1351,18 @@ function renderDateRows(date, dateObj, weekIndex) {
                 }
             }
 
-            // Time inputs only on primary row per date
+            // Time inputs on first venue row of each session (vIdx===0)
             let startTimeCell = '';
             let endTimeCell = '';
-            const existingStartTime = dateDetail.start_time || '';
-            const existingEndTime = dateDetail.end_time || '';
+            const existingStartTime = session.start_time || '';
+            const existingEndTime = session.end_time || '';
 
             if (sIdx === 0 && vIdx === 0) {
                 // Primary row
                 weekCell = `<strong>Week ${weekIndex + 1}</strong>${capacityHtml}`;
                 dateCell = dateDisplay;
-                startTimeCell = `<input type="time" class="form-control form-control-sm week-start-time" data-date="${date}" value="${existingStartTime}">`;
-                endTimeCell = `<input type="time" class="form-control form-control-sm week-end-time" data-date="${date}" value="${existingEndTime}">`;
+                startTimeCell = `<input type="time" class="form-control form-control-sm week-start-time" data-date="${date}" data-session="${sIdx}" value="${existingStartTime}">`;
+                endTimeCell = `<input type="time" class="form-control form-control-sm week-end-time" data-date="${date}" data-session="${sIdx}" value="${existingEndTime}">`;
                 actionsHtml = `<div class="week-venue-actions">
                     <button type="button" class="btn-add-session" onclick="addSession('${date}')" title="Add session">+S</button>
                     <button type="button" class="btn-add-venue" onclick="addVenue('${date}', ${sIdx})" title="Add venue">+V</button>
@@ -1371,6 +1371,8 @@ function renderDateRows(date, dateObj, weekIndex) {
                 // Additional session primary venue
                 weekCell = `<span class="session-venue-label">Session ${sIdx + 1}</span>${capacityHtml}`;
                 dateCell = '';
+                startTimeCell = `<input type="time" class="form-control form-control-sm week-start-time" data-date="${date}" data-session="${sIdx}" value="${existingStartTime}">`;
+                endTimeCell = `<input type="time" class="form-control form-control-sm week-end-time" data-date="${date}" data-session="${sIdx}" value="${existingEndTime}">`;
                 rowClasses.push('session-sub-row');
                 actionsHtml = `<div class="week-venue-actions">
                     <button type="button" class="btn-remove-session" onclick="removeSession('${date}', ${sIdx})" title="Remove session">&minus;S</button>
@@ -1546,19 +1548,19 @@ function captureCurrentDateValues(date) {
         const vIdx = parseInt($row.data('venue'));
         const sessions = weekVenueDetails[date].sessions;
 
-        // Capture time values from primary row (sIdx===0, vIdx===0)
-        const $startTime = $row.find('.week-start-time');
-        const $endTime = $row.find('.week-end-time');
-        if ($startTime.length) {
-            weekVenueDetails[date].start_time = $startTime.val() || '';
-        }
-        if ($endTime.length) {
-            weekVenueDetails[date].end_time = $endTime.val() || '';
-        }
-
         // Grow arrays as needed
         while (sessions.length <= sIdx) {
             sessions.push({ venues: [] });
+        }
+
+        // Capture time values at session level (from first venue row of each session)
+        const $startTime = $row.find('.week-start-time');
+        const $endTime = $row.find('.week-end-time');
+        if ($startTime.length) {
+            sessions[sIdx].start_time = $startTime.val() || '';
+        }
+        if ($endTime.length) {
+            sessions[sIdx].end_time = $endTime.val() || '';
         }
         while (sessions[sIdx].venues.length <= vIdx) {
             sessions[sIdx].venues.push({});
@@ -1577,6 +1579,7 @@ function addSession(date) {
     captureCurrentDateValues(date);
 
     weekVenueDetails[date].sessions.push({
+        start_time: '', end_time: '',
         venues: [{ faculty_code: '', faculty_code2: '', special_room_code: '' }]
     });
 
@@ -1758,19 +1761,19 @@ function saveWeekVenueDetails() {
             newDetails[dateKey] = { sessions: [] };
         }
 
-        // Capture time values from primary row
-        const $startTime = $row.find('.week-start-time');
-        const $endTime = $row.find('.week-end-time');
-        if ($startTime.length) {
-            newDetails[dateKey].start_time = $startTime.val() || '';
-        }
-        if ($endTime.length) {
-            newDetails[dateKey].end_time = $endTime.val() || '';
-        }
-
         // Ensure session array is long enough
         while (newDetails[dateKey].sessions.length <= sIdx) {
             newDetails[dateKey].sessions.push({ venues: [] });
+        }
+
+        // Capture time values at session level (from first venue row of each session)
+        const $startTime = $row.find('.week-start-time');
+        const $endTime = $row.find('.week-end-time');
+        if ($startTime.length) {
+            newDetails[dateKey].sessions[sIdx].start_time = $startTime.val() || '';
+        }
+        if ($endTime.length) {
+            newDetails[dateKey].sessions[sIdx].end_time = $endTime.val() || '';
         }
 
         const $faculty = $row.find('.week-faculty-select');
