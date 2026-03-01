@@ -159,6 +159,8 @@ def expand_rows(form_data):
         # Get session/venue details for this date
         date_detail = week_venue_details.get(date_str, {})
         sessions = date_detail.get('sessions', [{'venues': [{}]}])
+        start_time = date_detail.get('start_time', '')
+        end_time = date_detail.get('end_time', '')
 
         for session in sessions:
             venues = session.get('venues', [{}])
@@ -182,6 +184,8 @@ def expand_rows(form_data):
                     'programme_code': form_data.get('programme_code', ''),
                     'class_commencement': form_data['class_commencement'],
                     'scheduled_date': date_str,
+                    'start_time': start_time,
+                    'end_time': end_time,
                     'duration': int(form_data['duration']),
                     'activity_code': form_data['activity_code'],
                     'group_code_capacity': int(group_capacity),

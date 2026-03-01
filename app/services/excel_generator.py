@@ -30,7 +30,8 @@ def generate_excel_file(rows, programme_code):
     # Write headers
     headers = [
         'ID', 'FormID', 'CourseGroupID', 'AcademicSessionCode', 'ProgrammeCode',
-        'ClassCommencement', 'ScheduledDate', 'Duration', 'ActivityCode', 'GroupCodeCapacity', 'TotalCapacity',
+        'ClassCommencement', 'ScheduledDate', 'StartTime', 'EndTime',
+        'Duration', 'ActivityCode', 'GroupCodeCapacity', 'TotalCapacity',
         'CourseCode', 'CourseName', 'GroupCode', 'FacultyCode', 'FacultyCode2',
         'RequestSpecialRoomCode', 'RecurringUntilWeek'
     ]
@@ -49,6 +50,8 @@ def generate_excel_file(rows, programme_code):
             row['programme_code'],
             row['class_commencement'],
             row['scheduled_date'],
+            row.get('start_time', ''),
+            row.get('end_time', ''),
             row['duration'],
             row['activity_code'],
             row['group_code_capacity'],
@@ -134,7 +137,8 @@ def generate_excel_file_multiple(all_rows, programme_code, form_ids_list):
     # Write headers
     headers = [
         'ID', 'FormID', 'CourseGroupID', 'AcademicSessionCode', 'ProgrammeCode',
-        'ClassCommencement', 'ScheduledDate', 'Duration', 'ActivityCode', 'GroupCodeCapacity', 'TotalCapacity',
+        'ClassCommencement', 'ScheduledDate', 'StartTime', 'EndTime',
+        'Duration', 'ActivityCode', 'GroupCodeCapacity', 'TotalCapacity',
         'CourseCode', 'CourseName', 'GroupCode', 'FacultyCode', 'FacultyCode2',
         'RequestSpecialRoomCode', 'RecurringUntilWeek'
     ]
@@ -155,6 +159,8 @@ def generate_excel_file_multiple(all_rows, programme_code, form_ids_list):
             row['programme_code'],
             row['class_commencement'],
             row['scheduled_date'],
+            row.get('start_time', ''),
+            row.get('end_time', ''),
             row['duration'],
             row['activity_code'],
             row['group_code_capacity'],

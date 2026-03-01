@@ -1351,10 +1351,18 @@ function renderDateRows(date, dateObj, weekIndex) {
                 }
             }
 
+            // Time inputs only on primary row per date
+            let startTimeCell = '';
+            let endTimeCell = '';
+            const existingStartTime = dateDetail.start_time || '';
+            const existingEndTime = dateDetail.end_time || '';
+
             if (sIdx === 0 && vIdx === 0) {
                 // Primary row
                 weekCell = `<strong>Week ${weekIndex + 1}</strong>${capacityHtml}`;
                 dateCell = dateDisplay;
+                startTimeCell = `<input type="time" class="form-control form-control-sm week-start-time" data-date="${date}" value="${existingStartTime}">`;
+                endTimeCell = `<input type="time" class="form-control form-control-sm week-end-time" data-date="${date}" value="${existingEndTime}">`;
                 actionsHtml = `<div class="week-venue-actions">
                     <button type="button" class="btn-add-session" onclick="addSession('${date}')" title="Add session">+S</button>
                     <button type="button" class="btn-add-venue" onclick="addVenue('${date}', ${sIdx})" title="Add venue">+V</button>
@@ -1382,6 +1390,8 @@ function renderDateRows(date, dateObj, weekIndex) {
                 <tr data-date="${date}" data-session="${sIdx}" data-venue="${vIdx}" class="${rowClasses.join(' ')}">
                     <td class="text-center">${weekCell}</td>
                     <td>${dateCell}</td>
+                    <td>${startTimeCell}</td>
+                    <td>${endTimeCell}</td>
                     <td>
                         <select class="form-select week-faculty-select" data-date="${date}" data-session="${sIdx}" data-venue="${vIdx}">
                             <option value="">Select Faculty</option>
@@ -1535,6 +1545,16 @@ function captureCurrentDateValues(date) {
         const sIdx = parseInt($row.data('session'));
         const vIdx = parseInt($row.data('venue'));
         const sessions = weekVenueDetails[date].sessions;
+
+        // Capture time values from primary row (sIdx===0, vIdx===0)
+        const $startTime = $row.find('.week-start-time');
+        const $endTime = $row.find('.week-end-time');
+        if ($startTime.length) {
+            weekVenueDetails[date].start_time = $startTime.val() || '';
+        }
+        if ($endTime.length) {
+            weekVenueDetails[date].end_time = $endTime.val() || '';
+        }
 
         // Grow arrays as needed
         while (sessions.length <= sIdx) {
@@ -1698,9 +1718,19 @@ function populateApplyAllDropdowns() {
 }
 
 function applyToAllWeeks() {
+    const startTimeVal = $('#applyAllStartTime').val();
+    const endTimeVal = $('#applyAllEndTime').val();
     const facultyVal = $('#applyAllFaculty').val();
     const faculty2Val = $('#applyAllFaculty2').val();
     const specialRoomVal = $('#applyAllSpecialRoom').val();
+
+    // Apply time values to all primary rows
+    if (startTimeVal) {
+        $('input.week-start-time').val(startTimeVal);
+    }
+    if (endTimeVal) {
+        $('input.week-end-time').val(endTimeVal);
+    }
 
     // Only apply to primary venues (session 0, venue 0)
     if (facultyVal) {
@@ -1727,6 +1757,17 @@ function saveWeekVenueDetails() {
         if (!newDetails[dateKey]) {
             newDetails[dateKey] = { sessions: [] };
         }
+
+        // Capture time values from primary row
+        const $startTime = $row.find('.week-start-time');
+        const $endTime = $row.find('.week-end-time');
+        if ($startTime.length) {
+            newDetails[dateKey].start_time = $startTime.val() || '';
+        }
+        if ($endTime.length) {
+            newDetails[dateKey].end_time = $endTime.val() || '';
+        }
+
         // Ensure session array is long enough
         while (newDetails[dateKey].sessions.length <= sIdx) {
             newDetails[dateKey].sessions.push({ venues: [] });

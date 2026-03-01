@@ -275,27 +275,35 @@
                     </div>
                     <div class="card-body">
                         <div class="row">
-                            <div class="col-md-4">
+                            <div class="col-md-2">
+                                <label class="form-label">Start Time</label>
+                                <input type="time" class="form-control" id="applyAllStartTime">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">End Time</label>
+                                <input type="time" class="form-control" id="applyAllEndTime">
+                            </div>
+                            <div class="col-md-3">
                                 <label class="form-label">Faculty Code</label>
                                 <select class="form-select" id="applyAllFaculty">
                                     <option value="">Select Faculty</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label">Faculty Code 2 (Sparring)</label>
                                 <select class="form-select" id="applyAllFaculty2">
                                     <option value="">None (Optional)</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="form-label">Special Room Code</label>
                                 <select class="form-select" id="applyAllSpecialRoom">
                                     <option value="">None (Optional)</option>
                                 </select>
                             </div>
-                            <div class="col-md-2 d-flex align-items-end">
+                            <div class="col-md-1 d-flex align-items-end">
                                 <button type="button" class="btn btn-secondary w-100" id="applyToAllWeeksBtn">
-                                    Apply to All
+                                    Apply
                                 </button>
                             </div>
                         </div>
@@ -307,12 +315,14 @@
                     <table class="table table-bordered" id="weekVenueTable">
                         <thead class="table-light">
                             <tr>
-                                <th width="8%">Week</th>
-                                <th width="17%">Date</th>
-                                <th width="23%">Faculty Code <span class="text-danger">*</span></th>
-                                <th width="19%">Faculty Code 2 (Sparring)</th>
-                                <th width="20%">Special Room Code</th>
-                                <th width="13%">Actions</th>
+                                <th width="7%">Week</th>
+                                <th width="13%">Date</th>
+                                <th width="9%">Start Time</th>
+                                <th width="9%">End Time</th>
+                                <th width="18%">Faculty Code <span class="text-danger">*</span></th>
+                                <th width="16%">Faculty Code 2 (Sparring)</th>
+                                <th width="16%">Special Room Code</th>
+                                <th width="12%">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="weekVenueTableBody">
