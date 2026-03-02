@@ -34,6 +34,49 @@ GLOSSARY_FILES = {
     'specialroom': 'glossary_dtct_specialroomcode.xlsx'
 }
 
+# Upload settings
+MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB
+ALLOWED_EXTENSIONS = {'xlsx', 'xls'}
+
+# Glossary descriptions for management page
+GLOSSARY_DESCRIPTIONS = {
+    'academicsession': {
+        'label': 'Academic Session',
+        'icon': 'bi-calendar-event',
+        'description': 'Academic session codes with commencement week dates'
+    },
+    'programme': {
+        'label': 'Programme',
+        'icon': 'bi-mortarboard',
+        'description': 'Programme codes and descriptions'
+    },
+    'course': {
+        'label': 'Course',
+        'icon': 'bi-book',
+        'description': 'Course codes and titles'
+    },
+    'group': {
+        'label': 'Group',
+        'icon': 'bi-people',
+        'description': 'Student group codes'
+    },
+    'faculty': {
+        'label': 'Faculty / Lecturer',
+        'icon': 'bi-person-badge',
+        'description': 'Faculty and lecturer codes'
+    },
+    'activity': {
+        'label': 'Activity',
+        'icon': 'bi-clipboard-check',
+        'description': 'Activity type codes (lecture, tutorial, etc.)'
+    },
+    'specialroom': {
+        'label': 'Special Room',
+        'icon': 'bi-door-open',
+        'description': 'Special room/venue request codes'
+    }
+}
+
 # Default form values
 DEFAULT_DURATION = 0
 DEFAULT_CAPACITY = 0

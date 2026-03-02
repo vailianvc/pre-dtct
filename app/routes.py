@@ -1,8 +1,10 @@
 import json
+import os
 from datetime import datetime
-from flask import Blueprint, render_template, jsonify, request, send_file
+from flask import Blueprint, render_template, jsonify, request, send_file, current_app
+from werkzeug.utils import secure_filename
 from app import db
-from app.models import SavedSession
+from app.models import SavedSession, GlossaryMeta, GlossaryCache
 from app.services import excel_reader
 
 bp = Blueprint('main', __name__)
@@ -226,3 +228,90 @@ def delete_session(session_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': str(e)}), 500
+
+@bp.route('/glossaries')
+def glossaries():
+    """Render glossary management page"""
+    glossary_descriptions = current_app.config.get('GLOSSARY_DESCRIPTIONS', {})
+    glossary_files = current_app.config.get('GLOSSARY_FILES', {})
+
+    categories = []
+    for gtype in glossary_files.keys():
+        meta = GlossaryMeta.query.filter_by(glossary_type=gtype).first()
+        desc = glossary_descriptions.get(gtype, {})
+        count = GlossaryCache.query.filter_by(glossary_type=gtype).count()
+        categories.append({
+            'type': gtype,
+            'label': desc.get('label', gtype.title()),
+            'icon': desc.get('icon', 'bi-file-earmark'),
+            'description': desc.get('description', ''),
+            'entry_count': count,
+            'last_uploaded_at': meta.last_uploaded_at if meta else None,
+            'original_filename': meta.original_filename if meta else None
+        })
+
+    return render_template('glossaries.html', categories=categories)
+
+def _allowed_file(filename):
+    """Check if uploaded file has an allowed extension"""
+    return '.' in filename and \
+        filename.rsplit('.', 1)[1].lower() in current_app.config.get('ALLOWED_EXTENSIONS', set())
+
+@bp.route('/api/glossary/<glossary_type>/upload', methods=['POST'])
+def upload_glossary(glossary_type):
+    """Upload a new glossary Excel file for a given type"""
+    glossary_files = current_app.config.get('GLOSSARY_FILES', {})
+
+    if glossary_type not in glossary_files:
+        return jsonify({'error': 'Invalid glossary type'}), 400
+
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file provided'}), 400
+
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No file selected'}), 400
+
+    if not _allowed_file(file.filename):
+        allowed = ', '.join(current_app.config.get('ALLOWED_EXTENSIONS', set()))
+        return jsonify({'error': f'Invalid file type. Allowed: {allowed}'}), 400
+
+    # Save file using the configured glossary filename (overwrites existing)
+    target_filename = glossary_files[glossary_type]
+    glossary_dir = current_app.config['GLOSSARY_DIR']
+    target_path = os.path.join(glossary_dir, target_filename)
+
+    original_filename = secure_filename(file.filename)
+
+    try:
+        file.save(target_path)
+    except Exception as e:
+        return jsonify({'error': f'Failed to save file: {e}'}), 500
+
+    # Reload glossary data from the new file
+    result = excel_reader.reload_single_glossary(glossary_type, target_path)
+
+    if not result['success']:
+        return jsonify({'error': result.get('error', 'Failed to reload glossary')}), 500
+
+    # Update metadata
+    meta = GlossaryMeta.query.filter_by(glossary_type=glossary_type).first()
+    if not meta:
+        meta = GlossaryMeta(glossary_type=glossary_type)
+        db.session.add(meta)
+    meta.entry_count = result['count']
+    meta.last_uploaded_at = datetime.utcnow()
+    meta.original_filename = original_filename
+
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'error': f'Failed to update metadata: {e}'}), 500
+
+    return jsonify({
+        'success': True,
+        'count': result['count'],
+        'last_uploaded_at': meta.last_uploaded_at.strftime('%d %b %Y, %H:%M'),
+        'original_filename': original_filename
+    })

@@ -26,6 +26,15 @@ class GlossaryCache(db.Model):
             result['commencement_week_2'] = self.commencement_week_2 or ''
         return result
 
+class GlossaryMeta(db.Model):
+    __tablename__ = 'glossary_meta'
+
+    id = db.Column(db.Integer, primary_key=True)
+    glossary_type = db.Column(db.String(50), unique=True, nullable=False)
+    entry_count = db.Column(db.Integer, default=0)
+    last_uploaded_at = db.Column(db.DateTime, nullable=True)
+    original_filename = db.Column(db.String(255), nullable=True)
+
 class FormSubmission(db.Model):
     __tablename__ = 'form_submissions'
 

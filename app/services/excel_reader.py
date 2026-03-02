@@ -1,7 +1,7 @@
 import os
 from openpyxl import load_workbook
 from app import db
-from app.models import GlossaryCache
+from app.models import GlossaryCache, GlossaryMeta
 
 def load_glossary(file_path, glossary_type):
     """
@@ -101,6 +101,59 @@ def load_all_glossaries(app):
     except Exception as e:
         db.session.rollback()
         print(f"Error populating glossary cache: {e}")
+
+    # Seed GlossaryMeta rows for all types (create-if-not-exists)
+    for glossary_type in glossary_files.keys():
+        existing = GlossaryMeta.query.filter_by(glossary_type=glossary_type).first()
+        count = GlossaryCache.query.filter_by(glossary_type=glossary_type).count()
+        if not existing:
+            meta = GlossaryMeta(glossary_type=glossary_type, entry_count=count)
+            db.session.add(meta)
+        else:
+            existing.entry_count = count
+    try:
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error seeding glossary metadata: {e}")
+
+def reload_single_glossary(glossary_type, file_path):
+    """
+    Reload a single glossary from an Excel file into the database cache.
+
+    Parses the file first for validation, then replaces cache entries.
+
+    Args:
+        glossary_type: Type of glossary (e.g. 'course', 'group')
+        file_path: Path to the Excel file
+
+    Returns:
+        dict with 'success' (bool), 'count' (int), and optionally 'error' (str)
+    """
+    try:
+        data = load_glossary(file_path, glossary_type)
+        if not data:
+            return {'success': False, 'count': 0, 'error': 'No valid entries found in the uploaded file'}
+
+        # Delete old cache entries and insert new ones
+        GlossaryCache.query.filter_by(glossary_type=glossary_type).delete()
+
+        for item in data:
+            entry = GlossaryCache(
+                glossary_type=glossary_type,
+                code=item['code'],
+                description=item['description'],
+                commencement_week_1=item.get('commencement_week_1'),
+                commencement_week_2=item.get('commencement_week_2')
+            )
+            db.session.add(entry)
+
+        db.session.commit()
+        return {'success': True, 'count': len(data)}
+
+    except Exception as e:
+        db.session.rollback()
+        return {'success': False, 'count': 0, 'error': str(e)}
 
 def get_glossary_data(glossary_type):
     """

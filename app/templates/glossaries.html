@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}Glossary Management — Pre-DTCT{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/glossaries.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="glossary-page-container">
+    <h3 class="glossary-page-title">Glossary Management</h3>
+    <p class="glossary-page-subtitle">Upload updated glossary files to refresh dropdown data across the system.</p>
+
+    <div class="row g-4">
+        {% for cat in categories %}
+        <div class="col-lg-4 col-md-6 col-sm-12">
+            <div class="glossary-card" data-type="{{ cat.type }}">
+                <div class="glossary-card-header">
+                    <i class="bi {{ cat.icon }}"></i>
+                    <span>{{ cat.label }}</span>
+                </div>
+                <div class="glossary-card-body">
+                    <p class="glossary-card-desc">{{ cat.description }}</p>
+
+                    <div class="glossary-card-stats">
+                        <div class="stat-row">
+                            <span class="stat-label">Entries</span>
+                            <span class="stat-value entry-count">{{ cat.entry_count }}</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Last uploaded</span>
+                            <span class="stat-value last-uploaded">
+                                {% if cat.last_uploaded_at %}
+                                    {{ cat.last_uploaded_at.strftime('%d %b %Y, %H:%M') }}
+                                {% else %}
+                                    Not yet uploaded
+                                {% endif %}
+                            </span>
+                        </div>
+                        {% if cat.original_filename %}
+                        <div class="stat-row">
+                            <span class="stat-label">File</span>
+                            <span class="stat-value original-filename text-truncate" title="{{ cat.original_filename }}">{{ cat.original_filename }}</span>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <div class="glossary-upload-area">
+                        <input type="file" class="form-control glossary-file-input" accept=".xlsx,.xls" id="file-{{ cat.type }}">
+                        <button type="button" class="btn btn-primary btn-upload" data-type="{{ cat.type }}">
+                            <i class="bi bi-cloud-arrow-up"></i> Upload
+                        </button>
+                    </div>
+
+                    <div class="glossary-status d-none" id="status-{{ cat.type }}"></div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/glossaries.js') }}"></script>
+{% endblock %}

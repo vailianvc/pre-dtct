@@ -24,6 +24,9 @@ let editingEntryIndex = null;
 let existingSessionNames = [];
 
 $(document).ready(function() {
+    // Only initialise form-specific logic when the form page is active
+    if (!$('#dtctForm').length) return;
+
     // Initialize Select2 for all dropdowns
     initializeSelect2();
 
