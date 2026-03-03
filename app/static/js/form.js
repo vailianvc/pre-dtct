@@ -201,7 +201,7 @@ function updateClassCommencementOptions() {
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     /**
-     * Parse DD.MM.YYYY date string and generate 7 days of options (skipping Sundays)
+     * Parse DD.MM.YYYY date string and generate 7 days of options
      */
     function addWeekOptions(dateStr) {
         if (!dateStr) return;
@@ -219,24 +219,20 @@ function updateClassCommencementOptions() {
         // Generate 7 days (start date + 6 days)
         for (let i = 0; i < 7; i++) {
             const dayOfWeek = currentDate.getDay();
+            const dayName = dayNames[dayOfWeek];
+            const d = currentDate.getDate();
+            const m = monthNames[currentDate.getMonth()];
+            const y = currentDate.getFullYear();
 
-            // Skip Sunday (0) only - Saturday (6) is allowed
-            if (dayOfWeek !== 0) {
-                const dayName = dayNames[dayOfWeek];
-                const d = currentDate.getDate();
-                const m = monthNames[currentDate.getMonth()];
-                const y = currentDate.getFullYear();
+            const displayText = `${dayName}, ${d} ${m} ${y}`;
 
-                const displayText = `${dayName}, ${d} ${m} ${y}`;
+            // Format value as YYYY-MM-DD using local date methods
+            const valueYear = currentDate.getFullYear();
+            const valueMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
+            const valueDay = String(currentDate.getDate()).padStart(2, '0');
+            const value = `${valueYear}-${valueMonth}-${valueDay}`;
 
-                // Format value as YYYY-MM-DD using local date methods
-                const valueYear = currentDate.getFullYear();
-                const valueMonth = String(currentDate.getMonth() + 1).padStart(2, '0');
-                const valueDay = String(currentDate.getDate()).padStart(2, '0');
-                const value = `${valueYear}-${valueMonth}-${valueDay}`;
-
-                select.append(new Option(displayText, value, false, false));
-            }
+            select.append(new Option(displayText, value, false, false));
 
             // Move to next day
             currentDate.setDate(currentDate.getDate() + 1);
