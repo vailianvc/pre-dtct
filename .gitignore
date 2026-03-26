@@ -43,6 +43,9 @@ instance/
 .DS_Store
 Thumbs.db
 
+# Glossary data (managed via /glossaries UI)
+data/glossary/*.xlsx
+
 # Output files
 output/*.xlsx
 

@@ -1,7 +1,7 @@
 import json
 import os
 from datetime import datetime
-from flask import Blueprint, render_template, jsonify, request, send_file, current_app
+from flask import Blueprint, render_template, jsonify, request, send_file, send_from_directory, current_app
 from werkzeug.utils import secure_filename
 from app import db
 from app.models import SavedSession, GlossaryMeta, GlossaryCache
@@ -315,3 +315,20 @@ def upload_glossary(glossary_type):
         'last_uploaded_at': meta.last_uploaded_at.strftime('%d %b %Y, %H:%M'),
         'original_filename': original_filename
     })
+
+@bp.route('/api/glossary/<glossary_type>/download')
+def download_glossary(glossary_type):
+    """Download the current glossary Excel file for a given type"""
+    glossary_files = current_app.config.get('GLOSSARY_FILES', {})
+
+    if glossary_type not in glossary_files:
+        return jsonify({'error': 'Invalid glossary type'}), 400
+
+    glossary_dir = current_app.config['GLOSSARY_DIR']
+    filename = glossary_files[glossary_type]
+    file_path = os.path.join(glossary_dir, filename)
+
+    if not os.path.exists(file_path):
+        return jsonify({'error': 'Glossary file not found'}), 404
+
+    return send_from_directory(glossary_dir, filename, as_attachment=True)

@@ -45,6 +45,12 @@
                         {% endif %}
                     </div>
 
+                    {% if cat.entry_count > 0 %}
+                    <a href="{{ url_for('main.download_glossary', glossary_type=cat.type) }}" class="btn btn-sm btn-outline-secondary w-100 mb-2">
+                        <i class="bi bi-download"></i> Download current file
+                    </a>
+                    {% endif %}
+
                     <div class="glossary-upload-area">
                         <input type="file" class="form-control glossary-file-input" accept=".xlsx,.xls" id="file-{{ cat.type }}">
                         <button type="button" class="btn btn-primary btn-upload" data-type="{{ cat.type }}">
